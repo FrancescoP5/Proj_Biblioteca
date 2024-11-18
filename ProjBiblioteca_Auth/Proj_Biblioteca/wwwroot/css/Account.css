@@ -1,0 +1,57 @@
+﻿.Accesso,.Registrazione{
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center
+}
+
+.FormAccesso,.FormRegistrazione{
+    display: flex;
+    flex-direction:column;
+    align-items:center;
+    width: 200px;
+    height: 200px;
+    padding:20px;
+    box-shadow: 0 0 10px black;
+    gap:10px;
+}
+
+a{
+    text-decoration:underline;
+}
+
+a:hover{
+    cursor:pointer;
+}
+
+.hidden{
+    display:none;
+}
+
+
+.prenotazioni {
+    display: flex;
+    flex-direction: column;
+    align-content: center;
+    padding:10px;
+    min-width: fit-content;
+    max-width: 80vw;
+}
+
+.table {
+    border: 1px solid black;
+}
+
+    .table th {
+        width:150px;
+        max-width:150px;
+        height: 50px;
+        margin:auto;
+        border: 1px solid black;
+        font-weight:unset;
+        word-break:break-word;
+    }
+
+.table-columns{
+    font-weight:bold;
+}

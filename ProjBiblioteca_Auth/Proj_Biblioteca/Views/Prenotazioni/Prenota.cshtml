@@ -1,0 +1,55 @@
+﻿@using Proj_Biblioteca.Controllers
+@using Proj_Biblioteca.Models
+@model Libro
+@{
+    Layout = "_Layout";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Prenotazioni</title>
+    <link href="~/css/Prenotazioni.css" rel="stylesheet"/>
+</head>
+<body>
+    <div class="prenotazione">
+        <h3>Prenota</h3>
+        @if (Model != null && Model.Disponibilita > 0)
+        {
+           <table class="table">
+               <tr class="table-columns">
+                    <th>Titolo</th>
+                    <th>Autore</th>
+                    <th>ISBN</th>
+                    <th>Disponibilità</th>
+               </tr>
+               
+               <tr class="table-values">
+                    <th>@Model.Titolo</th>
+                    <th>@Model.Autore</th>
+                    <th>@Model.ISBN</th>
+                    <th>@Model.Disponibilita</th>
+               </tr>
+               
+           </table>
+           <div class="inputs">
+            <form method="post" action="/Prenotazioni/AggiungiPrenotazione">
+                    <input type="text" name="idLibro" value="@Model.Id" required hidden />
+                <label>Data Prenotazione</label>
+                <br />
+                    <label>Inizio</label><input class="date" id="dataInizio" name="inizio" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" onchange="CambioData(@Model.PrenotazioneMax)" required/>
+                <br />
+                    <label>Fine  </label><input class="date" id="dataFine" name="fine" type="date" min="" max="" required/>
+                 <br />
+                <button type="submit">Prenota</button>
+            </form>
+           </div>
+        }
+        else
+        {
+            <h4>Libro non disponibile..</h4>
+        }
+        <script src="~/js/Prenotazioni.js"></script>
+    </div>
+</body>
+</html>

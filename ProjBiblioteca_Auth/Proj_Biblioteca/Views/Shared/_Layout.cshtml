@@ -1,0 +1,30 @@
+﻿@using Proj_Biblioteca.Controllers
+@using Proj_Biblioteca.Models
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <link href="https://maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="~/css/Layout.css" rel="stylesheet"/>
+    <title>Biblioteca</title>
+</head>
+<body>
+    <header>
+        <div class="NavBar">
+            <h1 class="TitoloHeader">Biblioteca</h1>
+            @if (ViewData["Utente"] != null && ((Utente)ViewData["Utente"]).Nome == "Admin")
+            {
+                <i class="AggiungiLibro" onclick="AggiungiLibri()">+</i>
+            }
+            <i class="fa fa-user Account"></i>
+        </div>
+    </header>
+
+    <div class="PageBody">
+        @RenderBody()
+    </div>
+    <script src="~/js/Layout.js"></script>
+    @RenderSection("scripts", required:false)
+</body>
+</html>

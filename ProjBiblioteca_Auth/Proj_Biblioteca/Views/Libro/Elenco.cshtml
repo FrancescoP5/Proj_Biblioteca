@@ -1,0 +1,49 @@
+﻿@{
+    Layout = "_Layout";
+}
+@using Proj_Biblioteca.Controllers
+@using Proj_Biblioteca.Models
+@model IEnumerable<Libro>
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Elenco</title>
+    <link href="~/css/Elenco.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="Elenco">
+        <div class="Libri">
+            @foreach(Libro item in Model)
+            {
+                Utente UtenteLoggato = ViewData["Utente"] as Utente;
+
+                <div class="Libro @(item.Disponibilita > 0 ? "" : "NonDisponibile")" id="Libro-@(item.Id)">
+                    <div class="Img">
+                        <img src="~/img/default.jpg"/>
+                    </div>
+                    <div class="Titolo">@item.Titolo</div>
+                    <hr /><br />
+                    <span class="Autore">@item.Autore</span>
+                    <br /><br />
+
+                    @if(item.Disponibilita > 0)
+                    {
+                        @Html.ActionLink("Prenota", "Prenota", "Prenotazioni",new{idLibro = item.Id})
+                    }
+                    else
+                    {
+                        <span>Non Disponibile</span>
+                    }
+
+                    @if (UtenteLoggato != null && UtenteLoggato.Nome == "Admin")
+                    {
+                        @Html.ActionLink("Modifica", "Modifica", "Libro", new { id = item.Id })
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</body>
+</html>

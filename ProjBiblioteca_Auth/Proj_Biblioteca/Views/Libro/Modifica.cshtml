@@ -1,0 +1,49 @@
+﻿@using Proj_Biblioteca.Controllers
+@using Proj_Biblioteca.Models
+@model Libro
+@{
+    Layout = "_Layout";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Modifica</title>
+    <link href="~/css/Prenotazioni.css" rel="stylesheet"/>
+</head>
+<body>
+    @if(Model!=null)
+    {
+        <div class="modifica">
+            <h3>Modifica Libro</h3>
+        <form method="post" action="/Libro/Aggiorna">
+        <table class="table">
+            <tr class="table-columns">
+                <th>ID</th>
+                <th>Titolo</th>
+                <th>Autore</th>
+                <th>ISBN</th>
+                <th>Disponibilità</th>
+                <th>Prenotazione Massima</th>
+            </tr>
+
+            <tr class="table-values">
+                    <th><input type="number" name="id" value="@Model.Id" placeholder="@Model.Id" readonly required /></th>
+                    <th><input type="text" name="titolo" value="@Model.Titolo" placeholder="@Model.Titolo" required></th>
+                    <th><input type="text" name="autore" value="@Model.Autore" placeholder="@Model.Autore" required></th>
+                    <th><input type="number" min="0" name="isbn" value="@Model.ISBN" placeholder="@Model.ISBN" required></th>
+                    <th><input type="number" min="0" name="disponibilita" value="@Model.Disponibilita" placeholder="@Model.Disponibilita" required></th>
+                    <th><input type="number" min="0" name="prenotazioneMax" value="@Model.PrenotazioneMax" placeholder="@Model.PrenotazioneMax" required></th>
+            </tr>
+        </table>
+        <button type="submit">Modifica</button> 
+        <button type="reset">Reset</button>
+      </form>
+      <form method="post" action="/Libro/Elimina">
+          <input type="number" name="id" value="@Model.Id" hidden/>
+          <button type="submit">Elimina</button>
+      </form>
+      </div>
+    }
+</body>
+</html>

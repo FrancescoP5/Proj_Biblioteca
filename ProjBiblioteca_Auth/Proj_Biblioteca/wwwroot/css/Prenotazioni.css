@@ -1,0 +1,31 @@
+﻿.prenotazione,.modifica, .aggiungi{
+    display: flex;
+    flex-direction:column;
+    align-content: center;
+    padding: 50px;
+    margin: auto;
+    min-width: fit-content;
+    max-width: 80vw;
+    box-shadow: 0 0 10px black;
+}
+
+.modifica > form{
+    display:flex;
+}
+
+.aggiungi > form{
+    display:flex;
+}
+
+.table{
+    border:1px solid black;
+}
+
+.table th{
+    border:1px solid black;
+}
+
+.table-values th{
+    font-weight:normal;
+}
+

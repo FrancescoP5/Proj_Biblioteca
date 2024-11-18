@@ -1,0 +1,42 @@
+﻿@using Proj_Biblioteca.Controllers
+@using Proj_Biblioteca.Models
+
+@{
+    Layout = "_Layout";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Modifica</title>
+    <link href="~/css/Prenotazioni.css" rel="stylesheet" />
+</head>
+<body>
+        
+        <div class="aggiungi">
+            <h3>Aggiungi Libro</h3>
+            <form method="post" action="/Libro/Aggiungi">
+                <table class="table">
+                    <tr class="table-columns">
+                        <th>Titolo</th>
+                        <th>Autore</th>
+                        <th>ISBN</th>
+                        <th>Disponibilità</th>
+                        <th>Prenotazione Massima</th>
+                    </tr>
+
+                        <input type="number" name="id" value="0" hidden required />
+                    <tr class="table-values">
+                        <th><input type="text" name="titolo" placeholder="Titolo" required></th>
+                        <th><input type="text" name="autore" placeholder="Autore" required></th>
+                        <th><input type="number" min="0" name="isbn" placeholder="ISBN" required></th>
+                        <th><input type="number" min="0" name="disponibilita" placeholder="Disponibilita" required></th>
+                        <th><input type="number" min="0" name="prenotazioneMax" placeholder="PrenotazioneMax" required></th>
+                    </tr>
+                </table>
+                <button type="submit">Aggiungi</button>
+                <button type="reset">Reset</button>
+            </form>
+        </div>
+</body>
+</html>

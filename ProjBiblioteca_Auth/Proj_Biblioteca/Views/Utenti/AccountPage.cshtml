@@ -1,0 +1,142 @@
+﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@using Proj_Biblioteca.Controllers;
+@using Proj_Biblioteca.Models;
+@model IEnumerable<Prenotazione>
+
+@{
+    Layout = "_Layout";
+}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Account</title>
+    <link href="~/css/Account.css" rel="stylesheet"/>
+
+</head>
+<body>
+    @if(ViewData["Utente"]!=null) //Pagina account effettiva
+    {
+        
+        Utente UtenteLoggato = ViewData["Utente"] as Utente;
+        
+        <span>
+            <strong>Benvenuto, @UtenteLoggato.Nome </strong>
+            <button class="disconnect">Disconnettiti </button>
+            <button class="delete">Elimina Account</button>
+        </span>
+        <br /><br />
+        <h3>Prenotazioni</h3>
+        <br /><hr />
+        if (Model != null && Model.Count()>0)
+        {
+            if(UtenteLoggato.Nome == "Admin")
+            {
+                <div class="prenotazioni">
+                    <table class="table">
+                        <tr class="table-columns">
+                            <th>ID</th>
+                            <th>Titolo</th>
+                            <th>ISBN</th>
+                            <th>Data di Prenotazione</th>
+                            <th>Data di Restituzione</th>
+                            <th>Utente</th>
+                            <th>Elimina Prenotazione</th>
+
+                        </tr>
+                        @foreach (Prenotazione prenotazione in Model)
+                        {
+                            <tr class="table-values">
+                                <th>@prenotazione.Id</th>
+                                <th>@prenotazione.Libro.Titolo</th>
+                                <th>@prenotazione.Libro.ISBN</th>
+                                <th>@prenotazione.DDI.ToString("yyyy-MM-dd HH:mm")</th>
+                                <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
+                                <th>@prenotazione.Utente.Email</th>
+                                <th>
+                                    <form onsubmit="RimuoviPrenotazione(@prenotazione.Id)">
+                                        <input value="@prenotazione.Id" name="id" hidden readonly />
+                                        <button class="RimuoviPrenotazione" type="submit">X</button>
+                                    </form>
+                                </th>
+                            </tr>
+                        }
+                    </table>
+                </div>
+            }
+            else
+            {
+                
+            <div class="prenotazioni">
+                <table class="table">
+                    <tr class="table-columns">
+                        <th>Titolo</th>
+                        <th>Autore</th>
+                        <th>ISBN</th>
+                        <th>Data di Prenotazione</th>
+                        <th>Data di Restituzione</th>
+                        <th>Elimina Prenotazione</th>
+                    </tr>
+                @foreach(Prenotazione prenotazione in Model)
+                {
+                        <tr class="table-values">
+                            <th>@prenotazione.Libro.Titolo</th>
+                            <th>@prenotazione.Libro.Autore</th>
+                            <th>@prenotazione.Libro.ISBN</th>
+                            <th>@prenotazione.DDI.ToString("yyyy-MM-dd HH:mm")</th>
+                            <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
+                            <th>
+                                    <form onsubmit="RimuoviPrenotazione(@prenotazione.Id)">
+                                <input value="@prenotazione.Id" name="id" hidden readonly/>
+                                        <button class="RimuoviPrenotazione" type="submit">X</button>
+                                </form>
+                            </th>
+                        </tr>
+                    
+                }
+                </table>
+            </div>
+            }
+        }
+        else
+        {
+            <h4>Nessuna Prenotazione.</h4>
+        }
+    }
+    else // Login/Registrazione quando non c'è account loggato
+    {
+        <div class="Accesso" id="FormAccesso">
+            <h2 class="Titolo">Accesso</h2>
+            <br />
+            <form class="FormAccesso" id="loginForm" action="/Utenti/Login" method="post">
+                <label>Email:</label>
+                <input type="email" id="email" name="email" placeholder="example@example.com" required/>
+                <label>Password:</label>
+                <input type="password" id="password" name="password" placeholder="password" required/>
+                <button type="submit">Login</button>
+            </form>
+            <br />
+                <span>Non hai un account? <a onclick="FormRegistrazione()">Registrati.</a></span>
+        </div>
+
+        <div class="Registrazione hidden" id="FormRegistrazione" >
+            <h2 class="Titolo">Registrazione</h2>
+            <br />
+            <form class="FormRegistrazione" id="registrationForm" action="/Utenti/Registrazione" method="post">
+                <label>Nome:</label>
+                <input type="text" id="nomeReg" name="nome" placeholder="Nome" required />
+                <label>Email:</label>
+                <input type="email" id="emailReg" name="email" placeholder="example@example.com" required />
+                <label>Password:</label>
+                <input type="password" id="passwordReg" name="password" placeholder="password" required />
+                <button type="submit">Registrati</button>
+            </form>
+            <br />
+            <span>Hai un account? <a onclick="FormLogin()">Accedi.</a></span>
+
+        </div>
+    }
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+    <script src="~/js/Account.js"></script>
+</body>
+</html>
