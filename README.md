@@ -33,13 +33,4 @@ l'applicazione deve includere la progettazione del database, l'implementazione d
    Creare una documentazione chiara e concisa per l'API.
    Fornire istruzioni su come installare e avviare l'applicazione.
 
-Criteri Di Valutazione
-  Completezza della funzionalità implementata.
-  Qualità e chiarezza della progettazione del database.
-  Struttura e leggibilità del codice.
-  Qualità della documentazione fornita.
-   
-   
-Scadenza Lunedì 18/11   
 
-https://trello.com/invite/b/6731d4f62b4b3939c371922f/ATTI21ab8292208b691e772527e5b5a9f7888290852E/projbiblioteca
