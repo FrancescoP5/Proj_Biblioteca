@@ -37,7 +37,7 @@
                         <span>Non Disponibile</span>
                     }
 
-                    @if (UtenteLoggato != null && UtenteLoggato.Nome == "Admin")
+                    @if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
                     {
                         @Html.ActionLink("Modifica", "Modifica", "Libro", new { id = item.Id })
                     }

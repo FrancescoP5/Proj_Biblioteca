@@ -29,7 +29,7 @@ a:hover{
 }
 
 
-.prenotazioni {
+.prenotazioni, .utenti{
     display: flex;
     flex-direction: column;
     align-content: center;
@@ -52,6 +52,16 @@ a:hover{
         word-break:break-word;
     }
 
+
+
 .table-columns{
     font-weight:bold;
+}
+
+
+.success:after{
+    content: "Successo!";
+}
+.error:after{
+    content:"Errore!";
 }

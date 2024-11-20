@@ -16,7 +16,6 @@ function FormLogin() {
 
 
 $('.RimuoviPrenotazione').click(function () {
-    
     var form = $(this).parent();
     $.ajax({
         url: '/Prenotazioni/RimuoviPrenotazione',

@@ -86,6 +86,11 @@ namespace Proj_Biblioteca.Data
             try
             {
                 rows = await db.Read($"select * from Libri");
+                if (rows == null)
+                {
+                    Console.WriteLine("Errore nessun Libro");
+                    return null;
+                }
                 foreach (Dictionary<string, string> item in rows)
                 {
                     Libro e = new Libro();

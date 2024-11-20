@@ -12,7 +12,6 @@
     <meta charset="utf-8" />
     <title>Account</title>
     <link href="~/css/Account.css" rel="stylesheet"/>
-
 </head>
 <body>
     @if(ViewData["Utente"]!=null) //Pagina account effettiva
@@ -24,13 +23,14 @@
             <strong>Benvenuto, @UtenteLoggato.Nome </strong>
             <button class="disconnect">Disconnettiti </button>
             <button class="delete">Elimina Account</button>
+            @if(UtenteLoggato.Ruolo == "Admin"){<button class="ruoli" id="gestisciRuoli" onclick="window.location.href='/Utenti/GestioneRuoli'">Gestisci Ruoli</button>}
         </span>
         <br /><br />
         <h3>Prenotazioni</h3>
         <br /><hr />
         if (Model != null && Model.Count()>0)
         {
-            if(UtenteLoggato.Nome == "Admin")
+            if(UtenteLoggato.Ruolo == "Admin")
             {
                 <div class="prenotazioni">
                     <table class="table">
@@ -63,6 +63,8 @@
                         }
                     </table>
                 </div>
+
+
             }
             else
             {
@@ -108,6 +110,7 @@
         <div class="Accesso" id="FormAccesso">
             <h2 class="Titolo">Accesso</h2>
             <br />
+
             <form class="FormAccesso" id="loginForm" action="/Utenti/Login" method="post">
                 <label>Email:</label>
                 <input type="email" id="email" name="email" placeholder="example@example.com" required/>
@@ -115,13 +118,21 @@
                 <input type="password" id="password" name="password" placeholder="password" required/>
                 <button type="submit">Login</button>
             </form>
+
             <br />
+            @if (ViewData["Messaggio"]!=null)
+            {
+                <span class="erroreLogin">@(ViewData["Messaggio"].ToString())</span><br />
+            }
+                
+            
                 <span>Non hai un account? <a onclick="FormRegistrazione()">Registrati.</a></span>
         </div>
 
         <div class="Registrazione hidden" id="FormRegistrazione" >
             <h2 class="Titolo">Registrazione</h2>
             <br />
+
             <form class="FormRegistrazione" id="registrationForm" action="/Utenti/Registrazione" method="post">
                 <label>Nome:</label>
                 <input type="text" id="nomeReg" name="nome" placeholder="Nome" required />
@@ -131,7 +142,10 @@
                 <input type="password" id="passwordReg" name="password" placeholder="password" required />
                 <button type="submit">Registrati</button>
             </form>
+
             <br />
+
+
             <span>Hai un account? <a onclick="FormLogin()">Accedi.</a></span>
 
         </div>

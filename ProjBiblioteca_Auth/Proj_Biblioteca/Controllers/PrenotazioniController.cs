@@ -38,7 +38,7 @@ public class PrenotazioniController : BaseController
     public async Task<IActionResult> ElencoPrenotazioni()
     {
         Utente? UtenteLoggato = await GetUser();
-        if (UtenteLoggato != null && UtenteLoggato.Nome == "Admin")
+        if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
         {
             return Ok((await DAOUtente.GetInstance().ElencoPrenotazioni()).Cast<Prenotazione>());
         }
@@ -80,7 +80,7 @@ public class PrenotazioniController : BaseController
         if (UtenteLoggato != null)
         {
             Prenotazione? prenotazione;
-            if (UtenteLoggato.Nome == "Admin")
+            if (UtenteLoggato.Ruolo == "Admin")
                 prenotazione = (Prenotazione?)(await DAOUtente.GetInstance().FindPrenotazione(id));
             else
                 prenotazione = (Prenotazione?)(await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Find(p => p.Id == id);

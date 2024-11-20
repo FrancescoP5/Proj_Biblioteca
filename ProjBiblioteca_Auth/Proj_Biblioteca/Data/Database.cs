@@ -183,13 +183,14 @@ namespace Proj_Biblioteca.Data
                     "constraint AK_EMAIL UNIQUE(Email), " +
                     "Password VARCHAR(200), " +
                     "DDR DATETIME, " +
+                    "Ruolo VARCHAR(200)" +
                     "); ").Wait();
 
             //ACCOUNT ADMIN
             Update("Insert into Utenti " +
-                   "(Nome, Email, Password, DDR) " +
+                   "(Nome, Email, Password, DDR, Ruolo) " +
                    "values " +
-                  $"('Admin', 'Admin@Admin.com', HASHBYTES('SHA2_512','admin'), '{DateTime.UtcNow:yyyy-dd-MM HH:mm:ss}'); ").Wait();
+                  $"('Admin', 'Admin@Admin.com', HASHBYTES('SHA2_512','admin'), '{DateTime.UtcNow:yyyy-dd-MM HH:mm:ss}', 'Admin'); ").Wait();
 
             Update("create table Prenotazioni " +
                     "( " +

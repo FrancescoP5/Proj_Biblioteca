@@ -13,7 +13,7 @@
     <header>
         <div class="NavBar">
             <h1 class="TitoloHeader">Biblioteca</h1>
-            @if (ViewData["Utente"] != null && ((Utente)ViewData["Utente"]).Nome == "Admin")
+            @if (ViewData["Utente"] != null && ((Utente)ViewData["Utente"]).Ruolo == "Admin")
             {
                 <i class="AggiungiLibro" onclick="AggiungiLibri()">+</i>
             }
@@ -24,6 +24,7 @@
     <div class="PageBody">
         @RenderBody()
     </div>
+
     <script src="~/js/Layout.js"></script>
     @RenderSection("scripts", required:false)
 </body>

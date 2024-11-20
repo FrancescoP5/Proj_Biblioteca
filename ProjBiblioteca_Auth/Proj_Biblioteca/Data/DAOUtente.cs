@@ -1,4 +1,5 @@
-﻿using Proj_Biblioteca.Models;
+﻿using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using Proj_Biblioteca.Models;
 using System.Security.Claims;
 using System.Security.Principal;
 namespace Proj_Biblioteca.Data
@@ -39,19 +40,51 @@ namespace Proj_Biblioteca.Data
             return del;
         }
 
+
+        public async Task<List<Entity>> ListaUtenti(string email)
+        {
+            List<Dictionary<string, string>> rows = new List<Dictionary<string, string>>();
+            List<Entity> res = new List<Entity>();
+            try
+            {
+                rows = await db.Read($"select * from Utenti where email LIKE '%{email}%'");
+                if (rows == null)
+                {
+                    Console.WriteLine("Errore nessun Utente");
+                    return null;
+                }
+                foreach (Dictionary<string, string> item in rows)
+                {
+                    Utente e = new Utente();
+                    e.FromDictionary(item);
+                    res.Add(e);
+                }
+                return res;
+            }
+            catch
+            {
+                Console.WriteLine("Errore ricerca utenti");
+                return null;
+            }
+        }
+
         public async Task<Entity> Login(string email, string password)
         {
             Dictionary<string, string> res = new Dictionary<string, string>();
             try
             {
                 res = await db.ReadOne($"select * from Utenti where email = '{email.Replace("'", "''")}' AND password = HASHBYTES('SHA2_512','{(password.Replace("'", "''"))}') ");
+
                 if (res!= null && res.Count > 0)
                 {
                     Utente e = new Utente();
                     e.FromDictionary(res);
                     return e;
                 }
-
+                else
+                {
+                    Console.WriteLine("Nessun utente trovato!");
+                }
             }
             catch
             {
@@ -62,22 +95,10 @@ namespace Proj_Biblioteca.Data
 
         public async Task<bool> Registrazione(string nome, string email, string password)
         {
-
-            try
-            {
-                //TODO: Validazione dati in ingresso
-                await db.Update($"Insert into Utenti " +
-                          $"(Nome, Email, Password, DDR ) " +
-                          $"values " +
-                          $"('{nome.Replace("'", "''")}', '{email.Replace("'", "''")}', HASHBYTES('SHA2_512','{password.Replace("'", "''")}'), '{DateTime.UtcNow:yyyy-dd-MM HH:mm:ss}'); ");
-                return true;
-            }
-            catch
-            {
-                Console.WriteLine("errore nell'inserimento dell' utente");
-            }
-
-            return false;
+            return await db.Update($"Insert into Utenti " +
+                      $"(Nome, Email, Password, DDR, Ruolo ) " +
+                      $"values " +
+                      $"('{nome.Replace("'", "''")}', '{email.Replace("'", "''")}', HASHBYTES('SHA2_512','{password.Replace("'", "''")}'), '{DateTime.UtcNow:yyyy-dd-MM HH:mm:ss}', 'Utente' ); ");
         }
 
         public async Task<List<Entity>> ReadAll()
@@ -114,11 +135,9 @@ namespace Proj_Biblioteca.Data
                     {
                         //TODO: Validazione dati in ingresso
                         await db.Update($"Update Utenti Set " +
-                                  $"Nome = '{l.Nome.Replace("'", "''")}', " +
-                                  $"Email = '{l.Email.Replace("'", "''")}', " +
-                                  $"Password = HASHBYTES('SHA2_512','{l.Password.Replace("'", "''")}'), " +
-                                  $"DDR = '{l.DDR:yyyy-dd-MM HH:mm:ss}' " +
+                                  $"Ruolo = '{l.Ruolo.Replace("'","''")}' " +
                                   $"Where id = {l.Id} ");
+                        return true;
                     }
                     catch
                     {
@@ -228,6 +247,11 @@ namespace Proj_Biblioteca.Data
                 {
                     Libro l = new Libro();
                     Utente u = new Utente();
+                    if(rows==null)
+                    {
+                        Console.WriteLine("Errore nessuna Prenotazione");
+                        return null;
+                    }
                     foreach (var k in item)
                     {
                         if (k.Key.ToLower() == "id_libro")

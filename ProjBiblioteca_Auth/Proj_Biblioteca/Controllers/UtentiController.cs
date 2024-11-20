@@ -20,13 +20,22 @@ namespace Proj_Biblioteca.Controllers
 
         }
 
+
         public async Task<IActionResult> AccountPage()
         {
             Utente? UtenteLoggato = await GetUser();
             IEnumerable<Prenotazione>? prenotazioni = null;
+
+            
+
+            if (ViewData.ContainsKey("Messaggio"))
+                ViewData["Messaggio"] = TempData["Messaggio"];
+            else
+                ViewData.Add("Messaggio", TempData["Messaggio"]);
+
             if (UtenteLoggato != null)
             {
-                if (UtenteLoggato.Nome == "Admin")
+                if (UtenteLoggato.Ruolo == "Admin")
                 {
                     string apiUrl = "https://localhost:7139/Prenotazioni/ElencoPrenotazioni";
 
@@ -72,6 +81,67 @@ namespace Proj_Biblioteca.Controllers
             return View();
         }
 
+        public async Task<IActionResult> GestioneRuoli()
+        {
+            Utente? UtenteLoggato = await GetUser();
+            if(UtenteLoggato.Ruolo == "Admin")
+            {
+                return View();
+            }
+            else
+            {
+                return RedirectToAction("AccountPage");
+            }
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> CambiaRuolo(int id, string ruolo)
+        {
+            Utente? UtenteLoggato = await GetUser();
+
+            if (UtenteLoggato.Ruolo == "Admin")
+            {
+                Utente utente = (Utente)await DAOUtente.GetInstance().Find(id);
+                if (utente != null)
+                {
+                    utente.Ruolo = ruolo;
+                    if (await DAOUtente.GetInstance().Update(utente))
+                        return Ok();
+                    else
+                        return BadRequest();
+                }
+                else
+                {
+                    return NotFound();
+                }
+            }
+            else
+                return Unauthorized();
+        }
+
+
+        [HttpGet]
+        public async Task<IActionResult> ListaUtenti(string email)
+        {
+            Utente? UtenteLoggato = await GetUser();
+            if (UtenteLoggato.Ruolo == "Admin")
+            {
+
+                List<Utente> utenti = (await DAOUtente.GetInstance().ListaUtenti(email)).Cast<Utente>().ToList();
+                if (utenti.Count > 0)
+                {
+                    return Json(utenti);
+                }
+                else
+                {
+                    return BadRequest();
+                }
+            }
+            else
+            {
+                return Unauthorized();
+            }
+        }
 
         // ~/Utenti/Login/{email}{password}
         /*
@@ -86,14 +156,21 @@ namespace Proj_Biblioteca.Controllers
             {
                 Utente? utente = (Utente)await DAOUtente.GetInstance().Login(email, password);
 
+
                 if (utente != null)
                 {
                     SetUser(utente.Id);
                 }
+                else
+                {
+                    TempData["Messaggio"] = "Credenziali Errate, riprovare il Login";
+                    return RedirectToAction("AccountPage");
+                }
+                
 
             }
-
-            return RedirectToAction("AccountPage");
+            TempData["Messaggio"] = "Errore nel Login riprovare..";
+            return RedirectToAction("AccountPage" );
         }
 
         // ~/Utenti/Registrazione/{nome}{email}{password}
@@ -111,6 +188,7 @@ namespace Proj_Biblioteca.Controllers
             if (MailAddress.TryCreate(email, out _) == false || Regex.Match(password, passwordRGX).Success == false)
             {
                 _logger.LogInformation($"Registrazione fallita alle ore {DateTime.Now:HH:mm:ss}");
+                TempData["Messaggio"] = "Password o Email invalide per la Registazione";
                 return RedirectToAction("AccountPage");
             }
 
@@ -124,7 +202,8 @@ namespace Proj_Biblioteca.Controllers
             {
                 //Messaggio di registrazione Fallita
                 _logger.LogInformation($"Registrazione fallita alle ore {DateTime.Now:HH:mm:ss}");
-                return RedirectToAction("AccountPage");
+                TempData["Messaggio"] = "Errore, Registrazione Fallita riprovare.";
+                return RedirectToAction("AccountPage" );
             }
 
         }

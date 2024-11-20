@@ -111,7 +111,7 @@ namespace Proj_Biblioteca.Controllers
         public async Task<IActionResult> Aggiungi(Libro Libro)
         {
             Utente? UtenteLoggato = await GetUser();
-            if (UtenteLoggato != null && UtenteLoggato.Nome == "Admin")
+            if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 if (await DAOLibro.GetInstance().Insert(Libro))
                 {
@@ -143,7 +143,7 @@ namespace Proj_Biblioteca.Controllers
         public async Task<IActionResult> Aggiorna(Libro Libro)
         {
             Utente? UtenteLoggato = await GetUser();
-            if (UtenteLoggato != null && UtenteLoggato.Nome == "Admin")
+            if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 if (await DAOLibro.GetInstance().Update(Libro))
                 {
@@ -171,7 +171,7 @@ namespace Proj_Biblioteca.Controllers
         public async Task<IActionResult> Elimina(int id)
         {
             Utente? UtenteLoggato = await GetUser();
-            if (UtenteLoggato != null && UtenteLoggato.Nome == "Admin")
+            if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 if (await DAOLibro.GetInstance().Delete(id))
                 {
