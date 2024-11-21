@@ -158,7 +158,8 @@ namespace Proj_Biblioteca.Data
             Dictionary<string, string> res = new Dictionary<string, string>();
             try
             {
-                res = await db.ReadOne($"select * from Utenti where ID = {id}");
+                if(id!= null)
+                    res = await db.ReadOne($"select * from Utenti where ID = {id}");
                 Utente e = new Utente();
                 e.FromDictionary(res);
                 return e;
@@ -175,8 +176,13 @@ namespace Proj_Biblioteca.Data
             Dictionary<string, string> res = new Dictionary<string, string>();
             try
             {
-                res = await db.ReadOne($"select * from Prenotazioni where ID = {id}");
+                if(id!=null)
+                    res = await db.ReadOne($"select * from Prenotazioni where ID = {id}");
+                if (res == null)
+                    return null;
+
                 Prenotazione e = new Prenotazione();
+
 
                 foreach (var k in res)
                 {

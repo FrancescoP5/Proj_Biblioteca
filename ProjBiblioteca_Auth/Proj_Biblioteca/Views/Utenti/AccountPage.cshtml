@@ -23,14 +23,17 @@
             <strong>Benvenuto, @UtenteLoggato.Nome </strong>
             <button class="disconnect">Disconnettiti </button>
             <button class="delete">Elimina Account</button>
-            @if(UtenteLoggato.Ruolo == "Admin"){<button class="ruoli" id="gestisciRuoli" onclick="window.location.href='/Utenti/GestioneRuoli'">Gestisci Ruoli</button>}
+            @if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
+            {
+                <button class="ruoli" id="gestisciRuoli" onclick="window.location.href='/Utenti/GestioneRuoli'">Gestisci Ruoli</button>
+            }
         </span>
         <br /><br />
         <h3>Prenotazioni</h3>
         <br /><hr />
         if (Model != null && Model.Count()>0)
         {
-            if(UtenteLoggato.Ruolo == "Admin")
+            if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 <div class="prenotazioni">
                     <table class="table">

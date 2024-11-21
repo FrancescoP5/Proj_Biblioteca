@@ -8,6 +8,8 @@ using System.Net.Mail;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
 using Microsoft.AspNet.Identity;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
+using System.Net;
 
 namespace Proj_Biblioteca.Controllers
 {
@@ -84,7 +86,7 @@ namespace Proj_Biblioteca.Controllers
         public async Task<IActionResult> GestioneRuoli()
         {
             Utente? UtenteLoggato = await GetUser();
-            if(UtenteLoggato.Ruolo == "Admin")
+            if(UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 return View();
             }
@@ -99,7 +101,7 @@ namespace Proj_Biblioteca.Controllers
         {
             Utente? UtenteLoggato = await GetUser();
 
-            if (UtenteLoggato.Ruolo == "Admin")
+            if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 Utente utente = (Utente)await DAOUtente.GetInstance().Find(id);
                 if (utente != null)
@@ -124,7 +126,7 @@ namespace Proj_Biblioteca.Controllers
         public async Task<IActionResult> ListaUtenti(string email)
         {
             Utente? UtenteLoggato = await GetUser();
-            if (UtenteLoggato.Ruolo == "Admin")
+            if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
 
                 List<Utente> utenti = (await DAOUtente.GetInstance().ListaUtenti(email)).Cast<Utente>().ToList();
@@ -152,13 +154,16 @@ namespace Proj_Biblioteca.Controllers
         {
 
             _logger.LogInformation($"Tentativo di accesso alle ore {DateTime.Now:HH:mm:ss}");
+
             if (MailAddress.TryCreate(email, out _))//check della validita email
             {
                 Utente? utente = (Utente)await DAOUtente.GetInstance().Login(email, password);
 
-
+                
                 if (utente != null)
                 {
+
+
                     SetUser(utente.Id);
                 }
                 else
@@ -181,7 +186,6 @@ namespace Proj_Biblioteca.Controllers
         public async Task<IActionResult> Registrazione(string nome, string email, string password)
         {
 
-
             string passwordRGX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,10}$"; //Regex per la validazione di una password
             //fra gli 8-10 caratteri almeno una maiuscola una minuscola un numero e un carattere speciale (@$!%*?&)
 
@@ -196,6 +200,7 @@ namespace Proj_Biblioteca.Controllers
             {
                 //Messaggio di riuscita Registrazione
                 _logger.LogInformation($"Registrazione riuscita alle ore {DateTime.Now:HH:mm:ss}");
+
                 return await Login(email, password);
             }
             else

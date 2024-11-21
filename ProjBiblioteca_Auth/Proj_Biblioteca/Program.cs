@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.DataProtection;
 using Proj_Biblioteca.Data;
 using System.Diagnostics;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpContextAccessor();

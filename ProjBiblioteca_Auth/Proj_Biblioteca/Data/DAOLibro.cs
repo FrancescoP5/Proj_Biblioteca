@@ -41,10 +41,17 @@ namespace Proj_Biblioteca.Data
             Dictionary<string, string> res = new Dictionary<string, string>();
             try
             {
-                res = await db.ReadOne($"select * from Libri where ID = {id}");
+                if(id!=null)
+                    res = await db.ReadOne($"select * from Libri where ID = {id}");
+
                 Libro e = new Libro();
-                e.FromDictionary(res);
-                return e;
+                if (res != null)
+                {
+                    e.FromDictionary(res);
+                    return e;
+
+                }
+                return null;
             }
             catch
             {

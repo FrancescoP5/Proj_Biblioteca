@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.CodeAnalysis.Differencing;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 
@@ -59,7 +60,12 @@ namespace Proj_Biblioteca.Controllers
 
         public async Task<IActionResult> AggiungiLibro()
         {
-            return await Task.Run(() => View());
+            Utente? UtenteLoggato = await GetUser();
+            if (UtenteLoggato!= null && UtenteLoggato.Ruolo == "Admin")
+                return await Task.Run(() => View());
+
+            else
+                return Unauthorized();
         }
 
 

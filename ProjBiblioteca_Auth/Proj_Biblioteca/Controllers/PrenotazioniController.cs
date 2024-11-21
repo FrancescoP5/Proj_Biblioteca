@@ -114,6 +114,9 @@ public class PrenotazioniController : BaseController
     [HttpPost]
     public async Task<IActionResult> AggiungiPrenotazione(int idLibro, string inizio, string fine)
     {
+        if (idLibro == null || inizio == null || fine == null)
+            return BadRequest("Inserisci tutti i dati");
+
         Utente? UtenteLoggato = await GetUser();
         DateTime dataInizio = DateTime.Parse(inizio) + DateTime.Now.TimeOfDay;
         DateTime dataFine = DateTime.Parse(fine) + DateTime.Now.TimeOfDay; 
@@ -129,7 +132,9 @@ public class PrenotazioniController : BaseController
             if(response.IsSuccessStatusCode)
                 prenotazioniUtente = (await response.Content.ReadAsAsync<IEnumerable<Prenotazione>>()).ToList();
             else
-                return RedirectToAction("Prenota", new { idLibro = idLibro });
+            {
+                return BadRequest("Errore nel recupero delle prenotazioni riprovare..");
+            }
 
         }
 
@@ -144,18 +149,22 @@ public class PrenotazioniController : BaseController
                 if (await DAOUtente.GetInstance().AggiungiPrenotazione(UtenteLoggato, libro, dataInizio, dataFine))
                 {
                     _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.Id} Prenotazione aggiunta alle ore {DateTime.Now:HH:mm:ss}");
-                    return RedirectToAction("AccountPage", "Utenti");
+                    return Ok();
 
                 }
-
-                _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.Id} aggiunta Prenotazione fallita alle ore {DateTime.Now:HH:mm:ss}");
+            }
+            else
+            {
+                _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Prenotazioni massime raggiunte {DateTime.Now:HH:mm:ss}");
+                return BadRequest("Attenzione, Prenotazione massima raggiunta");
             }
         }
         else
         {
             _logger.LogInformation($"Nessun Account loggato {DateTime.Now:HH:mm:ss}");
+            return BadRequest("Errore, Nessun account loggato");
         }
-
-        return RedirectToAction("Prenota", new { idLibro = idLibro });
+        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.Id} aggiunta Prenotazione fallita alle ore {DateTime.Now:HH:mm:ss}");
+        return BadRequest("Errore");
     }
 }

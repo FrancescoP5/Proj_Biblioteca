@@ -22,3 +22,22 @@ Date.prototype.addDays = function (days) {
     date.setDate(date.getDate() + days);
     return date;
 }
+
+
+$(".prenota").click(function () {
+    var form = $(this).parent();
+
+    $.ajax({
+        url: "/Prenotazioni/AggiungiPrenotazione",
+        type: "POST",
+        data: form.serialize(),
+        success: function () {
+            window.location.href = "/Utenti/AccountPage";
+        },
+        error: function (msg) {
+            var errorMsg = "<h4>" + msg.responseText + "</h4>";
+            $(".errorMsg").html(errorMsg);
+        }
+
+    });
+});

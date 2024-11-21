@@ -33,7 +33,7 @@
                
            </table>
            <div class="inputs">
-            <form method="post" action="/Prenotazioni/AggiungiPrenotazione">
+            <form method="post"onsubmit="return false">
                     <input type="text" name="idLibro" value="@Model.Id" required hidden />
                 <label>Data Prenotazione</label>
                 <br />
@@ -41,14 +41,20 @@
                 <br />
                     <label>Fine  </label><input class="date" id="dataFine" name="fine" type="date" min="" max="" required/>
                  <br />
-                <button type="submit">Prenota</button>
+                <button class="prenota" type="submit">Prenota</button>
             </form>
            </div>
+           <br />
+           <div class="errorMsg">
+               
+           </div>
+
         }
         else
         {
             <h4>Libro non disponibile..</h4>
         }
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
         <script src="~/js/Prenotazioni.js"></script>
     </div>
 </body>
