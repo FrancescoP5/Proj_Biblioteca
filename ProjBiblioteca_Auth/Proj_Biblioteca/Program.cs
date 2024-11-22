@@ -1,13 +1,14 @@
+using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Options;
 using Proj_Biblioteca.Data;
 using System.Diagnostics;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddHttpContextAccessor();
 // Add services to the container.
 builder.Services.AddRazorPages();
 
@@ -22,6 +23,14 @@ builder.Services.AddSession(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
     options.Cookie.IsEssential = true;
     options.Cookie.MaxAge = TimeSpan.FromMinutes(10);
+});
+
+
+builder.Services.Configure<AntiforgeryOptions>(opts => 
+{ 
+    opts.Cookie.HttpOnly = true; 
+    opts.Cookie.SameSite = SameSiteMode.None;
+    opts.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
 

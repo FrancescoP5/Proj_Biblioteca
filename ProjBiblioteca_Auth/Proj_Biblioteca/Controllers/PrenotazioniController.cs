@@ -1,11 +1,11 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using NuGet.Protocol;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
-using System.Collections;
-using System.Net;
+using System.Security.Permissions;
 using System.Text;
-using System.Text.Unicode;
+using System.Text.Json;
+
 namespace Proj_Biblioteca.Controllers;
 
 public class PrenotazioniController : BaseController
@@ -15,10 +15,9 @@ public class PrenotazioniController : BaseController
     {
     }
 
-    [Route("{controller}/{action}/{idLibro?}")]
     public async Task<IActionResult> Prenota(int idLibro)
     {
-        Utente? UtenteLoggato = await GetUser();
+        Utente? UtenteLoggato = await GetUser("/Prentazioni/Prenota");
         if (UtenteLoggato != null)
         {
             Libro libro = new Libro();
@@ -34,13 +33,18 @@ public class PrenotazioniController : BaseController
      * Controlla se l'utente è Admin 
      * Ritorna tutte le prenotazioni di tutti gli utenti in forma IEnumerable<Prenotazioni>
      */
-    [HttpGet] 
-    public async Task<IActionResult> ElencoPrenotazioni()
+    [HttpGet]
+    public async Task<IActionResult> ElencoPrenotazioni(int id)
     {
-        Utente? UtenteLoggato = await GetUser();
+        Utente? UtenteLoggato = (Utente)await DAOUtente.GetInstance().Find(id);
+
         if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
         {
-            return Ok((await DAOUtente.GetInstance().ElencoPrenotazioni()).Cast<Prenotazione>());
+
+            IEnumerable<Prenotazione> prenotazioni = (await DAOUtente.GetInstance().ElencoPrenotazioni()).Cast<Prenotazione>();
+            string JsonPrenotazioni = prenotazioni.ToJson();
+
+            return Ok(Encryption.Encrypt(JsonPrenotazioni));
         }
         return NotFound();
     }
@@ -51,12 +55,17 @@ public class PrenotazioniController : BaseController
      * Ritorna tutte le prenotazioni dell'utente loggato in forma IEnumerable<Prenotazioni>
      */
     [HttpGet]
-    public async Task<IActionResult> GetPrenotazioni()
+    public async Task<IActionResult> GetPrenotazioni(int id)
     {
-        Utente? UtenteLoggato = await GetUser();
+        Utente? UtenteLoggato = (Utente)await DAOUtente.GetInstance().Find(id);
+
         if (UtenteLoggato != null)
         {
-            return Ok((await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Cast<Prenotazione>());
+
+            IEnumerable<Prenotazione> prenotazioni = (await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Cast<Prenotazione>();
+            string JsonPrenotazioni = prenotazioni.ToJson();
+
+            return Ok(Encryption.Encrypt(JsonPrenotazioni));
         }
         return NotFound();
 
@@ -76,7 +85,7 @@ public class PrenotazioniController : BaseController
     [HttpPost]
     public async Task<IActionResult> RimuoviPrenotazione(int id)
     {
-        Utente? UtenteLoggato = await GetUser();
+        Utente? UtenteLoggato = await GetUser("Prenotazioni/RimuoviPrenotazione");
         if (UtenteLoggato != null)
         {
             Prenotazione? prenotazione;
@@ -117,7 +126,7 @@ public class PrenotazioniController : BaseController
         if (idLibro == null || inizio == null || fine == null)
             return BadRequest("Inserisci tutti i dati");
 
-        Utente? UtenteLoggato = await GetUser();
+        Utente? UtenteLoggato = await GetUser("/Prenotazioni/AggiungiPrenotazione");
         DateTime dataInizio = DateTime.Parse(inizio) + DateTime.Now.TimeOfDay;
         DateTime dataFine = DateTime.Parse(fine) + DateTime.Now.TimeOfDay; 
 
@@ -125,12 +134,17 @@ public class PrenotazioniController : BaseController
 
         List<Prenotazione> prenotazioniUtente;
 
-        string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni";
+        string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/"+UtenteLoggato.Id;
         using (var httpClient = new HttpClient())
         { 
             HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
-            if(response.IsSuccessStatusCode)
-                prenotazioniUtente = (await response.Content.ReadAsAsync<IEnumerable<Prenotazione>>()).ToList();
+
+            string prenotazioniCrypted = await response.Content.ReadAsStringAsync();
+            string prenotazioniJson = Encryption.Decrypt(prenotazioniCrypted);
+
+
+            if (response.IsSuccessStatusCode)
+                prenotazioniUtente = (JsonSerializer.Deserialize<IEnumerable<Prenotazione>>(prenotazioniJson)).ToList();
             else
             {
                 return BadRequest("Errore nel recupero delle prenotazioni riprovare..");

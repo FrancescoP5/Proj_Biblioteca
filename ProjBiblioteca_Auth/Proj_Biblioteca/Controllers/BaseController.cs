@@ -14,30 +14,54 @@ namespace Proj_Biblioteca.Controllers
             _contextAccessor = contextAccessor;
             _logger = logger;
         }
-
-        private static ISession _session; 
        
-        public async Task<Utente?> GetUser()
+        public async Task<Utente?> GetUser(string path="NoPath")
         {
-            if (_session == null)
+            var httpContext = _contextAccessor.HttpContext;
+
+            if (httpContext == null)
                 return null;
 
-            int? id =  _session.GetInt32("UserId");
+            var session = httpContext.Session;
 
-            return id != null ? (Utente)await DAOUtente.GetInstance().Find((int)id) : null; 
+            if (session == null) 
+                return null;
+
+            int? id =  session.GetInt32("UserId");
+
+
+
+            if (id == null)
+            {
+                _logger.LogInformation("Nessun UserId trovato nella sessione");
+                return null;
+            }
+
+            var user = (Utente)await DAOUtente.GetInstance().Find((int)id);
+
+            return user; 
         }
 
-        public void SetUser(int? userId)
+        public void SetUser(int? userId, string path = "NoPath")
         {
+            var httpContext = _contextAccessor.HttpContext;
+
+            if (httpContext == null) 
+                return;
+
+            var session = httpContext.Session;
+
+            if(session == null) 
+                return;
+
             if (userId == null)
             {
-                _session.Clear();
-                _session = null;
+                session.Clear();
             }
             else
             {
-                _session = HttpContext.Session;
-                _session.SetInt32("UserId", userId.Value);
+                session.SetInt32("UserId", userId.Value);
+
             }
         }
     }

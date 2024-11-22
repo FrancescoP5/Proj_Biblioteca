@@ -1,31 +1,25 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using NuGet.Protocol;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 using System.Net.Mail;
-using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
-using Microsoft.AspNet.Identity;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.BlazorIdentity.Pages.Manage;
-using System.Net;
+
 
 namespace Proj_Biblioteca.Controllers
 {
+
     public class UtentiController : BaseController
     {
-
-        public UtentiController(IHttpContextAccessor contextAccessor, ILogger<UtentiController> logger) : base(contextAccessor, logger)
+        public UtentiController(IHttpContextAccessor contextAccessor, ILogger<BaseController> logger) : base(contextAccessor, logger)
         {
-;
-
         }
-
 
         public async Task<IActionResult> AccountPage()
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Utenti/AccountPage");
             IEnumerable<Prenotazione>? prenotazioni = null;
 
             
@@ -39,14 +33,17 @@ namespace Proj_Biblioteca.Controllers
             {
                 if (UtenteLoggato.Ruolo == "Admin")
                 {
-                    string apiUrl = "https://localhost:7139/Prenotazioni/ElencoPrenotazioni";
+                    string apiUrl = "https://localhost:7139/Prenotazioni/ElencoPrenotazioni/"+UtenteLoggato.Id;
 
 
                     using (var httpClient = new HttpClient())
                     {
-
                         HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
-                        prenotazioni = await response.Content.ReadAsAsync<IEnumerable<Prenotazione>>();
+
+                        string prenotazioniCrypted = await response.Content.ReadAsStringAsync();
+                        string prenotazioniJson = Encryption.Decrypt(prenotazioniCrypted);
+                        prenotazioni = JsonSerializer.Deserialize<IEnumerable<Prenotazione>>(prenotazioniJson);
+
                         if (response.IsSuccessStatusCode)
                         {
                             if (ViewData.ContainsKey("Utente"))
@@ -56,18 +53,23 @@ namespace Proj_Biblioteca.Controllers
 
                             return View(prenotazioni);
                         }
+
                     }
                 }
                 else
                 {
-                    string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni";
+                    string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/" + UtenteLoggato.Id;
 
 
                     using (var httpClient = new HttpClient())
                     {
 
                         HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
-                        prenotazioni = await response.Content.ReadAsAsync<IEnumerable<Prenotazione>>();
+
+                        string prenotazioniCrypted = await response.Content.ReadAsStringAsync();
+                        string prenotazioniJson = Encryption.Decrypt(prenotazioniCrypted);
+                        prenotazioni = JsonSerializer.Deserialize<IEnumerable<Prenotazione>>(prenotazioniJson);
+
                         if (response.IsSuccessStatusCode)
                         {
                             if (ViewData.ContainsKey("Utente"))
@@ -85,7 +87,7 @@ namespace Proj_Biblioteca.Controllers
 
         public async Task<IActionResult> GestioneRuoli()
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Utenti/GestioneRuoli");
             if(UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 return View();
@@ -99,7 +101,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpPut]
         public async Task<IActionResult> CambiaRuolo(int id, string ruolo)
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Utenti/CambiaRuolo");
 
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
@@ -125,7 +127,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpGet]
         public async Task<IActionResult> ListaUtenti(string email)
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Utenti/ListaUtenti");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
 
@@ -162,9 +164,8 @@ namespace Proj_Biblioteca.Controllers
                 
                 if (utente != null)
                 {
-
-
-                    SetUser(utente.Id);
+                    SetUser(utente.Id,"Utenti/Login");
+                    return RedirectToAction("AccountPage");
                 }
                 else
                 {
@@ -220,9 +221,9 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         public async Task<IActionResult> Disconnect()
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Utenti/Disconnect");
            _logger.LogInformation($"Utente: {UtenteLoggato.Nome} disconnesso alle ore {DateTime.Now:HH:mm:ss}");
-            SetUser(null);
+            SetUser(null,"Utenti/Disconnect");
             
             return RedirectToAction("AccountPage");
         }
@@ -236,7 +237,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete()
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Utenti/Delete");
             if (UtenteLoggato != null)
             {
                 List<Prenotazione> prenotazioni;
@@ -256,7 +257,7 @@ namespace Proj_Biblioteca.Controllers
 
 
                     _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Eliminazione riuscita alle ore {DateTime.Now:HH:mm:ss}");
-                    SetUser(null);
+                    SetUser(null,"Utenti/Delete");
                     return RedirectToAction("AccountPage");
 
                     //Messaggio di eliminazione riuscita

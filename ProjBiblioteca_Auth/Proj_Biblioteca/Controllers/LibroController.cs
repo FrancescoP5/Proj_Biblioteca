@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.CodeAnalysis.Differencing;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 
@@ -17,7 +16,7 @@ namespace Proj_Biblioteca.Controllers
 
         public async Task<IActionResult> Elenco()
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Libro/Elenco");
             string apiUrl = "https://localhost:7139/Libro/GetLibri";
 
             IEnumerable<Libro> libri;
@@ -60,7 +59,7 @@ namespace Proj_Biblioteca.Controllers
 
         public async Task<IActionResult> AggiungiLibro()
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Libro/AggiungiLibro");
             if (UtenteLoggato!= null && UtenteLoggato.Ruolo == "Admin")
                 return await Task.Run(() => View());
 
@@ -116,7 +115,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         public async Task<IActionResult> Aggiungi(Libro Libro)
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Libro/Aggiungi");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 if (await DAOLibro.GetInstance().Insert(Libro))
@@ -148,7 +147,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         public async Task<IActionResult> Aggiorna(Libro Libro)
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Libro/Aggiorna");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 if (await DAOLibro.GetInstance().Update(Libro))
@@ -176,7 +175,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         public async Task<IActionResult> Elimina(int id)
         {
-            Utente? UtenteLoggato = await GetUser();
+            Utente? UtenteLoggato = await GetUser("Libro/Elimina");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 if (await DAOLibro.GetInstance().Delete(id))

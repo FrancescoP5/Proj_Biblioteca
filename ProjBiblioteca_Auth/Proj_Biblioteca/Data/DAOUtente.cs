@@ -160,6 +160,10 @@ namespace Proj_Biblioteca.Data
             {
                 if(id!= null)
                     res = await db.ReadOne($"select * from Utenti where ID = {id}");
+
+                if (res == null)
+                    return null;
+
                 Utente e = new Utente();
                 e.FromDictionary(res);
                 return e;
