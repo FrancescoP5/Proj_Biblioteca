@@ -37,7 +37,8 @@ namespace Proj_Biblioteca.Controllers
                 return null;
             }
 
-            var user = (Utente)await DAOUtente.GetInstance().Find((int)id);
+            //var user = (Utente)await DAOUtente.GetInstance().Find((int)id);
+            var user = new Utente();
 
             return user; 
         }

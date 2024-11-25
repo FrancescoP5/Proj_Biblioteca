@@ -34,7 +34,7 @@
            </table>
            <div class="inputs">
             <form method="post"onsubmit="return false">
-                    <input type="text" name="idLibro" value="@Model.Id" required hidden />
+                    <input type="text" name="idLibro" value="@Model.ID" required hidden />
                 <label>Data Prenotazione</label>
                 <br />
                     <label>Inizio</label><input class="date" id="dataInizio" name="inizio" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" onchange="CambioData(@Model.PrenotazioneMax)" required/>

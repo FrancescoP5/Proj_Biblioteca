@@ -21,7 +21,7 @@ public class PrenotazioniController : BaseController
         if (UtenteLoggato != null)
         {
             Libro libro = new Libro();
-            libro = (Libro)await DAOLibro.GetInstance().Find(idLibro);
+            //libro = (Libro)await DAOLibro.GetInstance().Find(idLibro);
 
             return View(libro);
         }
@@ -36,12 +36,15 @@ public class PrenotazioniController : BaseController
     [HttpGet]
     public async Task<IActionResult> ElencoPrenotazioni(int id)
     {
-        Utente? UtenteLoggato = (Utente)await DAOUtente.GetInstance().Find(id);
+        //Utente? UtenteLoggato = (Utente)await DAOUtente.GetInstance().Find(id);
+        Utente? UtenteLoggato = new Utente();
 
         if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
         {
 
-            IEnumerable<Prenotazione> prenotazioni = (await DAOUtente.GetInstance().ElencoPrenotazioni()).Cast<Prenotazione>();
+            //IEnumerable<Prenotazione> prenotazioni = (await DAOUtente.GetInstance().ElencoPrenotazioni()).Cast<Prenotazione>();
+            IEnumerable<Prenotazione> prenotazioni = null;
+
             string JsonPrenotazioni = prenotazioni.ToJson();
 
             return Ok(Encryption.Encrypt(JsonPrenotazioni));
@@ -57,12 +60,15 @@ public class PrenotazioniController : BaseController
     [HttpGet]
     public async Task<IActionResult> GetPrenotazioni(int id)
     {
-        Utente? UtenteLoggato = (Utente)await DAOUtente.GetInstance().Find(id);
+        //Utente? UtenteLoggato = (Utente)await DAOUtente.GetInstance().Find(id);
+        Utente? UtenteLoggato = new Utente();
 
         if (UtenteLoggato != null)
         {
 
-            IEnumerable<Prenotazione> prenotazioni = (await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Cast<Prenotazione>();
+            //IEnumerable<Prenotazione> prenotazioni = (await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Cast<Prenotazione>();
+            IEnumerable<Prenotazione> prenotazioni = null;
+
             string JsonPrenotazioni = prenotazioni.ToJson();
 
             return Ok(Encryption.Encrypt(JsonPrenotazioni));
@@ -90,11 +96,13 @@ public class PrenotazioniController : BaseController
         {
             Prenotazione? prenotazione;
             if (UtenteLoggato.Ruolo == "Admin")
-                prenotazione = (Prenotazione?)(await DAOUtente.GetInstance().FindPrenotazione(id));
+                //prenotazione = (Prenotazione?)(await DAOUtente.GetInstance().FindPrenotazione(id));
+                prenotazione = null;
             else
-                prenotazione = (Prenotazione?)(await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Find(p => p.Id == id);
+                //prenotazione = (Prenotazione?)(await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Find(p => p.Id == id);
+                prenotazione = null;
 
-            if (prenotazione != null && await DAOUtente.GetInstance().RimuoviPrenotazione(prenotazione) )
+            if (prenotazione != null /*&& await DAOUtente.GetInstance().RimuoviPrenotazione(prenotazione)*/ )
             {
                 _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Prenotazione rimossa alle ore {DateTime.Now:HH:mm:ss}");
                 return Ok("PrenotazioneRimossa");
@@ -128,13 +136,13 @@ public class PrenotazioniController : BaseController
 
         Utente? UtenteLoggato = await GetUser("/Prenotazioni/AggiungiPrenotazione");
         DateTime dataInizio = DateTime.Parse(inizio) + DateTime.Now.TimeOfDay;
-        DateTime dataFine = DateTime.Parse(fine) + DateTime.Now.TimeOfDay; 
+        DateTime dataFine = DateTime.Parse(fine) + DateTime.Now.TimeOfDay;
 
-        Libro libro = (Libro)await DAOLibro.GetInstance().Find(idLibro);
+        Libro libro = /*(Libro)await DAOLibro.GetInstance().Find(idLibro);*/ null;
 
         List<Prenotazione> prenotazioniUtente;
 
-        string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/"+UtenteLoggato.Id;
+        string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/"+UtenteLoggato.ID;
         using (var httpClient = new HttpClient())
         { 
             HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
@@ -158,11 +166,11 @@ public class PrenotazioniController : BaseController
         if (UtenteLoggato != null)
         {
             if (prenotazioniUtente.Count < 3 && //check se l'utente loggato ha meno di 3 prenotazioni
-                prenotazioniUtente.Find(p => p.Libro.Id == libro.Id) == null) //Check se l'utente loggato ha già lo stesso libro
+                prenotazioniUtente.Find(p => p.Libro.ID == libro.ID) == null) //Check se l'utente loggato ha già lo stesso libro
             {
-                if (await DAOUtente.GetInstance().AggiungiPrenotazione(UtenteLoggato, libro, dataInizio, dataFine))
+                if (true/*await DAOUtente.GetInstance().AggiungiPrenotazione(UtenteLoggato, libro, dataInizio, dataFine)*/)
                 {
-                    _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.Id} Prenotazione aggiunta alle ore {DateTime.Now:HH:mm:ss}");
+                    _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.ID} Prenotazione aggiunta alle ore {DateTime.Now:HH:mm:ss}");
                     return Ok();
 
                 }
@@ -178,7 +186,7 @@ public class PrenotazioniController : BaseController
             _logger.LogInformation($"Nessun Account loggato {DateTime.Now:HH:mm:ss}");
             return BadRequest("Errore, Nessun account loggato");
         }
-        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.Id} aggiunta Prenotazione fallita alle ore {DateTime.Now:HH:mm:ss}");
+        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.ID} aggiunta Prenotazione fallita alle ore {DateTime.Now:HH:mm:ss}");
         return BadRequest("Errore");
     }
 }

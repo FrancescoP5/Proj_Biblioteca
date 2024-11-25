@@ -3,15 +3,13 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Proj_Biblioteca.Models
 {
-    public class Utente : Entity
+    public class Utente
     {
-        [Required]
-        public string Nome { get; set; }
-        [Required]
-        public string Email { get; set; }
-        [Required]
-        public string Ruolo { get; set; }
+        public int ID { get; set; }
 
+        public string Nome { get; set; }
+        public string Email { get; set; }
+        public string Ruolo { get; set; }
         public DateTime DDR { get; set; }
 
     }

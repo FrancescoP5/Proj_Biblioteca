@@ -79,7 +79,8 @@ namespace Proj_Biblioteca.Controllers
         {
             try
             {
-                return Ok((await DAOLibro.GetInstance().ReadAll()).Cast<Libro>());
+                return Ok();
+                //return Ok((await DAOLibro.GetInstance().ReadAll()).Cast<Libro>());
             }
             catch
             {
@@ -98,7 +99,8 @@ namespace Proj_Biblioteca.Controllers
         {
             try
             {
-                return Ok((Libro)await DAOLibro.GetInstance().Find(id));
+                return Ok();
+                //return Ok((Libro)await DAOLibro.GetInstance().Find(id));
             }
             catch
             {
@@ -118,7 +120,7 @@ namespace Proj_Biblioteca.Controllers
             Utente? UtenteLoggato = await GetUser("Libro/Aggiungi");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
-                if (await DAOLibro.GetInstance().Insert(Libro))
+                if (true/*await DAOLibro.GetInstance().Insert(Libro)*/)
                 {
                     //Mess aggiunta riuscita
                     _logger.LogInformation($"Libro: {Libro.Titolo} Aggiunto alle ore {DateTime.Now:HH:mm:ss}");
@@ -150,7 +152,7 @@ namespace Proj_Biblioteca.Controllers
             Utente? UtenteLoggato = await GetUser("Libro/Aggiorna");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
-                if (await DAOLibro.GetInstance().Update(Libro))
+                if (true /*await DAOLibro.GetInstance().Update(Libro)*/)
                 {
                     //Mess update riuscito
                     _logger.LogInformation($"Libro: {Libro.Titolo} Aggiornato alle ore {DateTime.Now:HH:mm:ss}");
@@ -160,7 +162,7 @@ namespace Proj_Biblioteca.Controllers
                 {
                     //Mess update fallito
                     _logger.LogInformation($"Libro: {Libro.Titolo} Aggiornamento fallito alle ore {DateTime.Now:HH:mm:ss}");
-                    return RedirectToAction("Modifica", "Libro", new { id = Libro.Id });
+                    return RedirectToAction("Modifica", "Libro", new { id = Libro.ID });
                 }
             }
             return RedirectToAction("Elenco", "Libro");
@@ -178,7 +180,7 @@ namespace Proj_Biblioteca.Controllers
             Utente? UtenteLoggato = await GetUser("Libro/Elimina");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
-                if (await DAOLibro.GetInstance().Delete(id))
+                if (true /*await DAOLibro.GetInstance().Delete(id)*/)
                 {
                     //Mess rimozione riuscita
                     _logger.LogInformation($"Libro ID: {id} Rimosso alle ore {DateTime.Now:HH:mm:ss}");

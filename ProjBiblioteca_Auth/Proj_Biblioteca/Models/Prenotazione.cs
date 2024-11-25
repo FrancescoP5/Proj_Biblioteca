@@ -3,45 +3,17 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Proj_Biblioteca.Models
 {
-    public class Prenotazione : Entity
+    public class Prenotazione
     {
-        private DateTime _ddi;
-        public DateTime DDI 
-        {
-            get => _ddi; 
-            set
-            {
-                if (value.Subtract(DateTime.Now).TotalDays > -2)
-                {
-                    _ddi = value;
-                }
-                else
-                {
-                    _ddi = DateTime.Now;
-                }
-            }
-        }
+        public int ID { get; set; }
 
-        private DateTime _ddf;
-        public DateTime DDF 
-        {
-            get => _ddf; 
-            set
-            {
-                if(value < DDI)
-                {
-                    _ddf = DDI;
-                }
-                else
-                {
-                    _ddf = value;
-                }
-            }
-        }
+        public DateTime DDI {  get; set; }
+        public DateTime DDF {  get; set; }
 
-        [Required]
+        public int UtenteID { get; set; }
+        public int LibroID { get; set; }
+
         public Utente Utente { get; set; }
-        [Required]
         public Libro Libro { get; set; }
     }
 }

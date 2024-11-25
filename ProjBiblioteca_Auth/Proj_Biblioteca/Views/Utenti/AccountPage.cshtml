@@ -50,15 +50,15 @@
                         @foreach (Prenotazione prenotazione in Model)
                         {
                             <tr class="table-values">
-                                <th>@prenotazione.Id</th>
+                                <th>@prenotazione.ID</th>
                                 <th>@prenotazione.Libro.Titolo</th>
                                 <th>@prenotazione.Libro.ISBN</th>
                                 <th>@prenotazione.DDI.ToString("yyyy-MM-dd HH:mm")</th>
                                 <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
                                 <th>@prenotazione.Utente.Email</th>
                                 <th>
-                                    <form onsubmit="RimuoviPrenotazione(@prenotazione.Id)">
-                                        <input value="@prenotazione.Id" name="id" hidden readonly />
+                                    <form onsubmit="RimuoviPrenotazione(@prenotazione.ID)">
+                                        <input value="@prenotazione.ID" name="id" hidden readonly />
                                         <button class="RimuoviPrenotazione" type="submit">X</button>
                                     </form>
                                 </th>
@@ -91,8 +91,8 @@
                             <th>@prenotazione.DDI.ToString("yyyy-MM-dd HH:mm")</th>
                             <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
                             <th>
-                                    <form onsubmit="RimuoviPrenotazione(@prenotazione.Id)">
-                                <input value="@prenotazione.Id" name="id" hidden readonly/>
+                                    <form onsubmit="RimuoviPrenotazione(@prenotazione.ID)">
+                                <input value="@prenotazione.ID" name="id" hidden readonly/>
                                         <button class="RimuoviPrenotazione" type="submit">X</button>
                                 </form>
                             </th>

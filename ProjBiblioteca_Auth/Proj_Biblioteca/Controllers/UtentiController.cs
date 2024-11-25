@@ -3,7 +3,6 @@ using NuGet.Protocol;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 using System.Net.Mail;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -33,7 +32,7 @@ namespace Proj_Biblioteca.Controllers
             {
                 if (UtenteLoggato.Ruolo == "Admin")
                 {
-                    string apiUrl = "https://localhost:7139/Prenotazioni/ElencoPrenotazioni/"+UtenteLoggato.Id;
+                    string apiUrl = "https://localhost:7139/Prenotazioni/ElencoPrenotazioni/"+UtenteLoggato.ID;
 
 
                     using (var httpClient = new HttpClient())
@@ -58,7 +57,7 @@ namespace Proj_Biblioteca.Controllers
                 }
                 else
                 {
-                    string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/" + UtenteLoggato.Id;
+                    string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/" + UtenteLoggato.ID;
 
 
                     using (var httpClient = new HttpClient())
@@ -105,11 +104,11 @@ namespace Proj_Biblioteca.Controllers
 
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
-                Utente utente = (Utente)await DAOUtente.GetInstance().Find(id);
+                Utente utente = /*(Utente)await DAOUtente.GetInstance().Find(id);*/ null;
                 if (utente != null)
                 {
                     utente.Ruolo = ruolo;
-                    if (await DAOUtente.GetInstance().Update(utente))
+                    if (true /*await DAOUtente.GetInstance().Update(utente)*/)
                         return Ok();
                     else
                         return BadRequest();
@@ -131,7 +130,7 @@ namespace Proj_Biblioteca.Controllers
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
 
-                List<Utente> utenti = (await DAOUtente.GetInstance().ListaUtenti(email)).Cast<Utente>().ToList();
+                List<Utente> utenti = /*(await DAOUtente.GetInstance().ListaUtenti(email)).Cast<Utente>().ToList();*/ null;
                 if (utenti.Count > 0)
                 {
                     return Json(utenti);
@@ -159,12 +158,12 @@ namespace Proj_Biblioteca.Controllers
 
             if (MailAddress.TryCreate(email, out _))//check della validita email
             {
-                Utente? utente = (Utente)await DAOUtente.GetInstance().Login(email, password);
+                Utente? utente = /*(Utente)await DAOUtente.GetInstance().Login(email, password);*/ null;
 
                 
                 if (utente != null)
                 {
-                    SetUser(utente.Id,"Utenti/Login");
+                    SetUser(utente.ID,"Utenti/Login");
                     return RedirectToAction("AccountPage");
                 }
                 else
@@ -197,7 +196,7 @@ namespace Proj_Biblioteca.Controllers
                 return RedirectToAction("AccountPage");
             }
 
-            if (await DAOUtente.GetInstance().Registrazione(nome, email, password))
+            if (true/*await DAOUtente.GetInstance().Registrazione(nome, email, password)*/)
             {
                 //Messaggio di riuscita Registrazione
                 _logger.LogInformation($"Registrazione riuscita alle ore {DateTime.Now:HH:mm:ss}");
@@ -241,17 +240,17 @@ namespace Proj_Biblioteca.Controllers
             if (UtenteLoggato != null)
             {
                 List<Prenotazione> prenotazioni;
-                prenotazioni = (await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Cast<Prenotazione>().ToList();
+                prenotazioni = /*(await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Cast<Prenotazione>().ToList();*/ null;
 
                 foreach (Prenotazione p in prenotazioni)
                 {
-                    if (await DAOUtente.GetInstance().RimuoviPrenotazione(p) == false)
+                    if (true /*await DAOUtente.GetInstance().RimuoviPrenotazione(p) == false*/)
                     {
                         _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Reset Prenotazioni fallito {DateTime.Now:HH:mm:ss}");
                         return (RedirectToAction("AccountPage"));
                     }
                 }
-                if (await DAOUtente.GetInstance().Delete(UtenteLoggato.Id))
+                if (true /*await DAOUtente.GetInstance().Delete(UtenteLoggato.Id)*/)
                 {
                     
 

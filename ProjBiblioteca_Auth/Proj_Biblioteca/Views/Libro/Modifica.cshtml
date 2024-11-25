@@ -28,7 +28,7 @@
             </tr>
 
             <tr class="table-values">
-                    <th><input type="number" name="id" value="@Model.Id" placeholder="@Model.Id" readonly required /></th>
+                    <th><input type="number" name="id" value="@Model.ID" placeholder="@Model.ID" readonly required /></th>
                     <th><input type="text" name="titolo" value="@Model.Titolo" placeholder="@Model.Titolo" required></th>
                     <th><input type="text" name="autore" value="@Model.Autore" placeholder="@Model.Autore" required></th>
                     <th><input type="number" min="0" name="isbn" value="@Model.ISBN" placeholder="@Model.ISBN" required></th>
@@ -40,7 +40,7 @@
         <button type="reset">Reset</button>
       </form>
       <form method="post" action="/Libro/Elimina">
-          <input type="number" name="id" value="@Model.Id" hidden/>
+          <input type="number" name="id" value="@Model.ID" hidden/>
           <button type="submit">Elimina</button>
       </form>
       </div>
