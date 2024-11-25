@@ -1,5 +1,6 @@
 ﻿@using Proj_Biblioteca.Controllers
 @using Proj_Biblioteca.Models
+@using Proj_Biblioteca.ViewModels
 <!DOCTYPE html>
 
 <html>
@@ -14,7 +15,7 @@
 
         <div class="NavBar">
             <h1 class="TitoloHeader">Biblioteca</h1>
-            @if (ViewData["Utente"] != null && ((Utente)ViewData["Utente"]).Ruolo == "Admin")
+            @if (ViewData["Utente"] != null && ((UtenteViewModel)ViewData["Utente"]).Ruolo == "Admin")
             {
                 <i class="AggiungiLibro" onclick="AggiungiLibri()">+</i>
             }

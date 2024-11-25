@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
+using Proj_Biblioteca.ViewModels;
 using System.Net.Mail;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -18,7 +19,7 @@ namespace Proj_Biblioteca.Controllers
 
         public async Task<IActionResult> AccountPage()
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/AccountPage");
+            UtenteViewModel? UtenteLoggato = await GetUser("Utenti/AccountPage");
             IEnumerable<Prenotazione>? prenotazioni = null;
 
             
@@ -86,7 +87,7 @@ namespace Proj_Biblioteca.Controllers
 
         public async Task<IActionResult> GestioneRuoli()
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/GestioneRuoli");
+            UtenteViewModel? UtenteLoggato = await GetUser("Utenti/GestioneRuoli");
             if(UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 return View();
@@ -100,11 +101,11 @@ namespace Proj_Biblioteca.Controllers
         [HttpPut]
         public async Task<IActionResult> CambiaRuolo(int id, string ruolo)
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/CambiaRuolo");
+            UtenteViewModel? UtenteLoggato = await GetUser("Utenti/CambiaRuolo");
 
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
-                Utente? utente = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(u=>u.ID == id);
+                UtenteViewModel? utente = await UtenteViewModel.GetViewModel(_libreria, id);
                 if (utente != null)
                 {
                     utente.Ruolo = ruolo;
@@ -136,19 +137,19 @@ namespace Proj_Biblioteca.Controllers
         [HttpGet]
         public async Task<IActionResult> ListaUtenti(string email)
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/ListaUtenti");
+            UtenteViewModel? UtenteLoggato = await GetUser("Utenti/ListaUtenti");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
 
-                List<Utente> utenti;
+                List<UtenteViewModel> utenti;
                      
                 if (string.IsNullOrEmpty(email))
                 {
-                    utenti = await _libreria.Utenti.AsNoTracking().ToListAsync();
+                    utenti = await UtenteViewModel.GetViewModel(_libreria);
                 }
                 else
                 {
-                    utenti = await _libreria.Utenti.AsNoTracking().Where(u => u.Email.ToLower().Contains(email.ToLower())).ToListAsync();
+                    utenti = (await UtenteViewModel.GetViewModel(_libreria)).Where(u => u.Email.ToLower().Contains(email.ToLower())).ToList();
                 }
 
                 if (utenti.Count > 0)
@@ -178,7 +179,8 @@ namespace Proj_Biblioteca.Controllers
 
             if (MailAddress.TryCreate(email, out _))//check della validita email
             {
-                Utente? utente = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(p => p.Email == email && p.Password == password );
+                var testUtente = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(p=>p.ID==1);
+                Utente? utente = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(p => p.Email == email && p.Password == Encryption.Encrypt(password) );
                 
                 if (utente != null)
                 {
@@ -244,7 +246,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         public async Task<IActionResult> Disconnect()
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/Disconnect");
+            UtenteViewModel? UtenteLoggato = await GetUser("Utenti/Disconnect");
             if(UtenteLoggato!=null)
             _logger.LogInformation($"Utente: {UtenteLoggato.Nome} disconnesso alle ore {DateTime.Now:HH:mm:ss}");
             await SetUser(null, "Utenti/Disconnect");
@@ -261,7 +263,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete()
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/Delete");
+            UtenteViewModel? UtenteLoggato = await GetUser("Utenti/Delete");
             if (UtenteLoggato != null)
             {
                 List<Prenotazione> prenotazioni;

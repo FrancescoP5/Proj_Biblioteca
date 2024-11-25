@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
+using Proj_Biblioteca.ViewModels;
 
 namespace Proj_Biblioteca.Controllers
 {
@@ -17,7 +18,7 @@ namespace Proj_Biblioteca.Controllers
 
         public async Task<IActionResult> Elenco()
         {
-            Utente? UtenteLoggato = await GetUser("Libro/Elenco");
+            UtenteViewModel? UtenteLoggato = await GetUser("Libro/Elenco");
             string apiUrl = "https://localhost:7139/Libro/GetLibri";
 
             List<Libro> libri;
@@ -60,7 +61,7 @@ namespace Proj_Biblioteca.Controllers
 
         public async Task<IActionResult> AggiungiLibro()
         {
-            Utente? UtenteLoggato = await GetUser("Libro/AggiungiLibro");
+            UtenteViewModel? UtenteLoggato = await GetUser("Libro/AggiungiLibro");
             if (UtenteLoggato!= null && UtenteLoggato.Ruolo == "Admin")
                 return await Task.Run(() => View());
 
@@ -116,7 +117,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         public async Task<IActionResult> Aggiungi([Bind("Titolo,Autore,PrenotazioneMax,ISBN,Disponibilita")] Libro libro)
         {
-            Utente? UtenteLoggato = await GetUser("Libro/Aggiungi");
+            UtenteViewModel? UtenteLoggato = await GetUser("Libro/Aggiungi");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 try
@@ -172,7 +173,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         public async Task<IActionResult> Aggiorna([Bind("ID,Titolo,Autore,PrenotazioneMax,ISBN,Disponibilita")] Libro libro)
         {
-            Utente? UtenteLoggato = await GetUser("Libro/Aggiorna");
+            UtenteViewModel? UtenteLoggato = await GetUser("Libro/Aggiorna");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 try
@@ -223,7 +224,7 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         public async Task<IActionResult> Elimina(int? id)
         {
-            Utente? UtenteLoggato = await GetUser("Libro/Elimina");
+            UtenteViewModel? UtenteLoggato = await GetUser("Libro/Elimina");
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 if(id == null)

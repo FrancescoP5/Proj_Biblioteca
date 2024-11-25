@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.Data;
-using Proj_Biblioteca.Models;
+using Proj_Biblioteca.ViewModels;
 
 namespace Proj_Biblioteca.Controllers
 {
@@ -18,7 +18,7 @@ namespace Proj_Biblioteca.Controllers
             _libreria = Dbcontext;
         }
        
-        public async Task<Utente?> GetUser(string path="NoPath")
+        public async Task<UtenteViewModel?> GetUser(string path="NoPath")
         {
             var httpContext = _contextAccessor.HttpContext;
 
@@ -40,8 +40,7 @@ namespace Proj_Biblioteca.Controllers
                 return null;
             }
 
-            //var user = (Utente)await DAOUtente.GetInstance().Find((int)id);
-            var user = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(u => u.ID == id);
+            var user = await UtenteViewModel.GetViewModel(_libreria,id);
 
             return user; 
         }

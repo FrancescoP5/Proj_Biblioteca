@@ -3,6 +3,7 @@
 }
 @using Proj_Biblioteca.Controllers
 @using Proj_Biblioteca.Models
+@using Proj_Biblioteca.ViewModels
 @model IEnumerable<Libro>
 
 <!DOCTYPE html>
@@ -17,7 +18,7 @@
         <div class="Libri">
             @foreach(Libro item in Model)
             {
-                Utente UtenteLoggato = ViewData["Utente"] as Utente;
+                UtenteViewModel UtenteLoggato = ViewData["Utente"] as UtenteViewModel;
 
                 <div class="Libro @(item.Disponibilita > 0 ? "" : "NonDisponibile")" id="Libro-@(item.ID)">
                     <div class="Img">

@@ -19,6 +19,7 @@ namespace Proj_Biblioteca.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.UseCollation("Latin1_General_CS_AS");
             modelBuilder.Entity<Libro>().ToTable("Libro");
             modelBuilder.Entity<Utente>().ToTable("Utente");
             modelBuilder.Entity<Prenotazione>().ToTable("Prenotazione");

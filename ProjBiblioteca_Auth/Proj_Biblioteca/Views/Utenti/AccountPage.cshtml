@@ -1,6 +1,7 @@
 ﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using Proj_Biblioteca.Controllers;
 @using Proj_Biblioteca.Models;
+@using Proj_Biblioteca.ViewModels
 @model IEnumerable<Prenotazione>
 
 @{
@@ -16,8 +17,8 @@
 <body>
     @if(ViewData["Utente"]!=null) //Pagina account effettiva
     {
-        
-        Utente UtenteLoggato = ViewData["Utente"] as Utente;
+
+        UtenteViewModel UtenteLoggato = ViewData["Utente"] as UtenteViewModel;
         
         <span>
             <strong>Benvenuto, @UtenteLoggato.Nome </strong>

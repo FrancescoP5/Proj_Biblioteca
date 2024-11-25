@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using NuGet.Protocol;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
+using Proj_Biblioteca.ViewModels;
 using System.Text.Json;
 
 namespace Proj_Biblioteca.Controllers;
@@ -16,7 +17,7 @@ public class PrenotazioniController : BaseController
 
     public async Task<IActionResult> Prenota(int idLibro)
     {
-        Utente? UtenteLoggato = await GetUser("/Prentazioni/Prenota");
+        UtenteViewModel? UtenteLoggato = await GetUser("/Prentazioni/Prenota");
         if (UtenteLoggato != null)
         {
             Libro? libro = await _libreria.Libri.AsNoTracking().FirstOrDefaultAsync(l => l.ID == idLibro);
@@ -34,7 +35,7 @@ public class PrenotazioniController : BaseController
     [HttpGet]
     public async Task<IActionResult> ElencoPrenotazioni(int id)
     {
-        Utente? UtenteLoggato = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(u => u.ID == id);
+        UtenteViewModel? UtenteLoggato = await UtenteViewModel.GetViewModel(_libreria,id);
 
         if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
         {
@@ -56,7 +57,7 @@ public class PrenotazioniController : BaseController
     [HttpGet]
     public async Task<IActionResult> GetPrenotazioni(int id)
     {
-        Utente? UtenteLoggato = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(u => u.ID == id);
+        UtenteViewModel? UtenteLoggato = await UtenteViewModel.GetViewModel(_libreria, id);
 
         if (UtenteLoggato != null)
         {
@@ -85,7 +86,7 @@ public class PrenotazioniController : BaseController
     [HttpPost]
     public async Task<IActionResult> RimuoviPrenotazione(int id)
     {
-        Utente? UtenteLoggato = await GetUser("Prenotazioni/RimuoviPrenotazione");
+        UtenteViewModel? UtenteLoggato = await GetUser("Prenotazioni/RimuoviPrenotazione");
         if (UtenteLoggato != null)
         {
             Prenotazione? prenotazione;
@@ -148,7 +149,7 @@ public class PrenotazioniController : BaseController
         if (idLibro == null || inizio == null || fine == null)
             return BadRequest("Inserisci tutti i dati");
 
-        Utente? UtenteLoggato = await GetUser("/Prenotazioni/AggiungiPrenotazione");
+        UtenteViewModel? UtenteLoggato = await GetUser("/Prenotazioni/AggiungiPrenotazione");
         DateTime dataInizio = DateTime.Parse(inizio) + DateTime.Now.TimeOfDay;
         DateTime dataFine = DateTime.Parse(fine) + DateTime.Now.TimeOfDay;
 
