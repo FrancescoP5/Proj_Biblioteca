@@ -1,5 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using NuGet.Protocol;
+using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 using System.Net.Mail;
@@ -12,7 +12,7 @@ namespace Proj_Biblioteca.Controllers
 
     public class UtentiController : BaseController
     {
-        public UtentiController(IHttpContextAccessor contextAccessor, ILogger<BaseController> logger) : base(contextAccessor, logger)
+        public UtentiController(IHttpContextAccessor contextAccessor, ILogger<BaseController> logger, LibreriaContext DbContext) : base(contextAccessor, logger, DbContext)
         {
         }
 
@@ -104,14 +104,24 @@ namespace Proj_Biblioteca.Controllers
 
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
-                Utente utente = /*(Utente)await DAOUtente.GetInstance().Find(id);*/ null;
+                Utente? utente = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(u=>u.ID == id);
                 if (utente != null)
                 {
                     utente.Ruolo = ruolo;
-                    if (true /*await DAOUtente.GetInstance().Update(utente)*/)
+
+                    try
+                    {
+                        _libreria.Update(utente);
+                        await _libreria.SaveChangesAsync();
+
                         return Ok();
-                    else
-                        return BadRequest();
+                    }
+                    catch (DbUpdateException ex)
+                    {
+                        //Errore database 
+                        _logger.LogError($"{ex.ToString()} || {DateTime.Now:HH:mm:ss.ff}");
+                        return StatusCode(500);
+                    }
                 }
                 else
                 {
@@ -130,7 +140,17 @@ namespace Proj_Biblioteca.Controllers
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
 
-                List<Utente> utenti = /*(await DAOUtente.GetInstance().ListaUtenti(email)).Cast<Utente>().ToList();*/ null;
+                List<Utente> utenti;
+                     
+                if (string.IsNullOrEmpty(email))
+                {
+                    utenti = await _libreria.Utenti.AsNoTracking().ToListAsync();
+                }
+                else
+                {
+                    utenti = await _libreria.Utenti.AsNoTracking().Where(u => u.Email.ToLower().Contains(email.ToLower())).ToListAsync();
+                }
+
                 if (utenti.Count > 0)
                 {
                     return Json(utenti);
@@ -158,12 +178,11 @@ namespace Proj_Biblioteca.Controllers
 
             if (MailAddress.TryCreate(email, out _))//check della validita email
             {
-                Utente? utente = /*(Utente)await DAOUtente.GetInstance().Login(email, password);*/ null;
-
+                Utente? utente = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(p => p.Email == email && p.Password == password );
                 
                 if (utente != null)
                 {
-                    SetUser(utente.ID,"Utenti/Login");
+                    await SetUser(utente.ID,"Utenti/Login");
                     return RedirectToAction("AccountPage");
                 }
                 else
@@ -195,21 +214,26 @@ namespace Proj_Biblioteca.Controllers
                 TempData["Messaggio"] = "Password o Email invalide per la Registazione";
                 return RedirectToAction("AccountPage");
             }
-
-            if (true/*await DAOUtente.GetInstance().Registrazione(nome, email, password)*/)
+            try
             {
+
+                _libreria.Add(new Utente() { Nome = nome, Email = email, Password = password, DDR = DateTime.Now, Ruolo = "Utente" });
+
+                await _libreria.SaveChangesAsync();
+
                 //Messaggio di riuscita Registrazione
                 _logger.LogInformation($"Registrazione riuscita alle ore {DateTime.Now:HH:mm:ss}");
 
                 return await Login(email, password);
             }
-            else
+            catch (DbUpdateException ex)
             {
-                //Messaggio di registrazione Fallita
-                _logger.LogInformation($"Registrazione fallita alle ore {DateTime.Now:HH:mm:ss}");
+                //Errore database 
                 TempData["Messaggio"] = "Errore, Registrazione Fallita riprovare.";
-                return RedirectToAction("AccountPage" );
+                _logger.LogError($"{ex.ToString()} || {DateTime.Now:HH:mm:ss.ff}");
+                return RedirectToAction("AccountPage");
             }
+
 
         }
 
@@ -221,9 +245,10 @@ namespace Proj_Biblioteca.Controllers
         public async Task<IActionResult> Disconnect()
         {
             Utente? UtenteLoggato = await GetUser("Utenti/Disconnect");
-           _logger.LogInformation($"Utente: {UtenteLoggato.Nome} disconnesso alle ore {DateTime.Now:HH:mm:ss}");
-            SetUser(null,"Utenti/Disconnect");
-            
+            if(UtenteLoggato!=null)
+            _logger.LogInformation($"Utente: {UtenteLoggato.Nome} disconnesso alle ore {DateTime.Now:HH:mm:ss}");
+            await SetUser(null, "Utenti/Disconnect");
+
             return RedirectToAction("AccountPage");
         }
 
@@ -240,32 +265,45 @@ namespace Proj_Biblioteca.Controllers
             if (UtenteLoggato != null)
             {
                 List<Prenotazione> prenotazioni;
-                prenotazioni = /*(await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Cast<Prenotazione>().ToList();*/ null;
+                prenotazioni = await _libreria.Prenotazioni.Include(p=>p.Libro).AsNoTracking().Where(p=>p.UtenteID == UtenteLoggato.ID).ToListAsync();
 
                 foreach (Prenotazione p in prenotazioni)
                 {
-                    if (true /*await DAOUtente.GetInstance().RimuoviPrenotazione(p) == false*/)
+                    try
                     {
-                        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Reset Prenotazioni fallito {DateTime.Now:HH:mm:ss}");
+                        Libro? libro = p.Libro;
+                        _libreria.Remove(p);
+                        await _libreria.SaveChangesAsync();
+
+                        libro.Disponibilita++;
+                        _libreria.Update(libro);
+                        await _libreria.SaveChangesAsync();
+
+                    }
+                    catch(DbUpdateException ex)
+                    {
+                        //Errore database 
+                        _logger.LogError($"{ex.ToString()} || {DateTime.Now:HH:mm:ss.ff}");
                         return (RedirectToAction("AccountPage"));
                     }
-                }
-                if (true /*await DAOUtente.GetInstance().Delete(UtenteLoggato.Id)*/)
-                {
-                    
 
+                }
+                try
+                {
+                    _libreria.Remove(UtenteLoggato);
+                    await _libreria.SaveChangesAsync();
 
                     _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Eliminazione riuscita alle ore {DateTime.Now:HH:mm:ss}");
-                    SetUser(null,"Utenti/Delete");
+                    await SetUser(null,"Utenti/Delete");
                     return RedirectToAction("AccountPage");
 
                     //Messaggio di eliminazione riuscita
                 }
-                else
+                catch(DbUpdateException ex)
                 {
-                    _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Eliminazione fallita alle ore {DateTime.Now:HH:mm:ss}");
-                    return RedirectToAction("AccountPage");
-                    //Messaggio di eliminazione fallita
+                    //Errore database 
+                    _logger.LogError($"{ex.ToString()} || {DateTime.Now:HH:mm:ss.ff}");
+                    return (RedirectToAction("AccountPage"));
                 }
 
             }

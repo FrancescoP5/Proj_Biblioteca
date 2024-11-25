@@ -15,6 +15,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddDbContext<LibreriaContext>(options =>
   options.UseSqlServer(builder.Configuration.GetConnectionString("LibreriaContext")));
 
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
 builder.Services.AddDistributedMemoryCache();
 
 builder.Services.AddSession(options =>
@@ -48,9 +50,20 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+else
+{
+    app.UseDeveloperExceptionPage();
+    app.UseMigrationsEndPoint();
+}
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
 
-
+    var context = services.GetRequiredService<LibreriaContext>();
+    context.Database.EnsureCreated();
+    DbInitializer.Initialize(context);
+}
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
