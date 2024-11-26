@@ -56,7 +56,7 @@
                                 <th>@prenotazione.Libro.ISBN</th>
                                 <th>@prenotazione.DDI.ToString("yyyy-MM-dd HH:mm")</th>
                                 <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
-                                <th>@prenotazione.Utente.Email</th>
+                                <th>@prenotazione.UtenteViewModel.Email</th>
                                 <th>
                                     <form onsubmit="RimuoviPrenotazione(@prenotazione.ID)">
                                         <input value="@prenotazione.ID" name="id" hidden readonly />

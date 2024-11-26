@@ -1,6 +1,4 @@
-﻿using Proj_Biblioteca.Data;
-
-namespace Proj_Biblioteca.Models
+﻿namespace Proj_Biblioteca.Models
 {
     public class Libro
     {

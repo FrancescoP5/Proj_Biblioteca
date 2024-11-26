@@ -1,5 +1,4 @@
-﻿using Proj_Biblioteca.Data;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Proj_Biblioteca.Models
@@ -32,13 +31,6 @@ namespace Proj_Biblioteca.Models
 
         [NotMapped]
         private string _password;
-        //[NotMapped]
-        //public string Password
-        //{
-        //    get { return Encryption.Decrypt(PasswordStored); }
-        //    set { PasswordStored = Encryption.Encrypt(value); }
-        //}
-
 
         [DataType(DataType.DateTime)]
         public DateTime DDR { get; set; }

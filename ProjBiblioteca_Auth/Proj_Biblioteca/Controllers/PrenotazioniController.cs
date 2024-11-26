@@ -40,7 +40,13 @@ public class PrenotazioniController : BaseController
         if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
         {
 
-            IEnumerable<Prenotazione> prenotazioni = await _libreria.Prenotazioni.Include(p=> p.Libro).Include(p=>p.Utente).AsNoTracking().ToListAsync();
+            IEnumerable<Prenotazione> prenotazioni = await _libreria.Prenotazioni.Include(p=> p.Libro).AsNoTracking().ToListAsync();
+
+            foreach (var prenotazione in prenotazioni)
+            {
+                var Utente = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(u => u.ID == prenotazione.UtenteID);
+                prenotazione.UtenteViewModel = new UtenteViewModel() { ID = Utente.ID, DDR = Utente.DDR, Email = Utente.Email, Nome = Utente.Nome, Ruolo = Utente.Ruolo };
+            }
 
             string JsonPrenotazioni = prenotazioni.ToJson();
 
@@ -62,7 +68,13 @@ public class PrenotazioniController : BaseController
         if (UtenteLoggato != null)
         {
 
-            IEnumerable<Prenotazione> prenotazioni = await _libreria.Prenotazioni.Include(p => p.Libro).Include(p => p.Utente).AsNoTracking().Where(p => p.UtenteID == UtenteLoggato.ID).ToListAsync();
+            IEnumerable<Prenotazione> prenotazioni = await _libreria.Prenotazioni.Include(p => p.Libro).AsNoTracking().Where(p => p.UtenteID == UtenteLoggato.ID).ToListAsync();
+
+            foreach (var prenotazione in prenotazioni)
+            {
+                prenotazione.UtenteViewModel = new UtenteViewModel() { ID = UtenteLoggato.ID, DDR = UtenteLoggato.DDR, Email = UtenteLoggato.Email, Nome = UtenteLoggato.Nome, Ruolo = UtenteLoggato.Ruolo };
+            }
+
 
             string JsonPrenotazioni = prenotazioni.ToJson();
 

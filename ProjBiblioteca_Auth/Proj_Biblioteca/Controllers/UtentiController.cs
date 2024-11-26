@@ -179,7 +179,6 @@ namespace Proj_Biblioteca.Controllers
 
             if (MailAddress.TryCreate(email, out _))//check della validita email
             {
-                var testUtente = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(p=>p.ID==1);
                 Utente? utente = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(p => p.Email == email && p.Password == Encryption.Encrypt(password) );
                 
                 if (utente != null)
