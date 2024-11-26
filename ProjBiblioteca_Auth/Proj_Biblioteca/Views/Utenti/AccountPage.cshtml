@@ -58,7 +58,7 @@
                                 <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
                                 <th>@prenotazione.UtenteViewModel.Email</th>
                                 <th>
-                                    <form onsubmit="RimuoviPrenotazione(@prenotazione.ID)">
+                                    <form onsubmit="return false">
                                         <input value="@prenotazione.ID" name="id" hidden readonly />
                                         <button class="RimuoviPrenotazione" type="submit">X</button>
                                     </form>
@@ -92,7 +92,7 @@
                             <th>@prenotazione.DDI.ToString("yyyy-MM-dd HH:mm")</th>
                             <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
                             <th>
-                                    <form onsubmit="RimuoviPrenotazione(@prenotazione.ID)">
+                                    <form onsubmit="return false">
                                 <input value="@prenotazione.ID" name="id" hidden readonly/>
                                         <button class="RimuoviPrenotazione" type="submit">X</button>
                                 </form>

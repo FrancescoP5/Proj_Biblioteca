@@ -198,7 +198,7 @@ public class PrenotazioniController : BaseController
 
                 try
                 {
-                    if (DateTime.Parse(inizio) > DateTime.Now && DateTime.Parse(inizio) <= DateTime.Parse(fine) && libro.Disponibilita > 0 && DateTime.Parse(fine) <= DateTime.Parse(inizio).AddDays(libro.PrenotazioneMax + 1)) // check della data e della disponibilita
+                    if (DateTime.Parse(inizio).AddDays(1) >= DateTime.Now && DateTime.Parse(inizio) <= DateTime.Parse(fine) && libro.Disponibilita > 0 && DateTime.Parse(fine) <= DateTime.Parse(inizio).AddDays(libro.PrenotazioneMax + 1)) // check della data e della disponibilita
                     {
                         _libreria.Add(new Prenotazione() { LibroID = libro.ID, UtenteID = UtenteLoggato.ID, DDI = DateTime.Parse(inizio), DDF = DateTime.Parse(fine) });
                         await _libreria.SaveChangesAsync();
