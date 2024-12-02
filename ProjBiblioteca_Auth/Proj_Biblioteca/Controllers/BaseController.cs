@@ -1,6 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.Data;
+using Proj_Biblioteca.Models;
 using Proj_Biblioteca.ViewModels;
 
 namespace Proj_Biblioteca.Controllers
@@ -9,64 +12,42 @@ namespace Proj_Biblioteca.Controllers
     {
         protected readonly ILogger<BaseController> _logger;
         protected readonly IHttpContextAccessor _contextAccessor;
+
         protected readonly LibreriaContext _libreria;
 
-        public BaseController(IHttpContextAccessor contextAccessor, ILogger<BaseController> logger, LibreriaContext Dbcontext)
+        protected readonly UserManager<Utente> _userManager;
+        protected readonly SignInManager<Utente> _signInManager;
+        protected readonly RoleManager<Role> _roleManager;
+
+        public BaseController(IHttpContextAccessor contextAccessor, ILogger<BaseController> logger,
+            LibreriaContext Dbcontext,
+            UserManager<Utente> userManager, SignInManager<Utente> signInManager, RoleManager<Role> roleManager)
         {
             _contextAccessor = contextAccessor;
             _logger = logger;
+
             _libreria = Dbcontext;
+
+            _userManager = userManager;
+            _signInManager = signInManager;
+            _roleManager = roleManager;
         }
-       
-        public async Task<UtenteViewModel?> GetUser(string path="NoPath")
+
+        public async Task<UtenteViewModel?> GetUser()
         {
-            var httpContext = _contextAccessor.HttpContext;
-
-            if (httpContext == null)
-                return null;
-
-            var session = httpContext.Session;
-
-            if (session == null) 
-                return null;
-
-            int? id =  session.GetInt32("UserId");
-
+            var id = User.Claims.FirstOrDefault()?.Value;
 
 
             if (id == null)
             {
+
                 _logger.LogInformation("Nessun UserId trovato nella sessione");
                 return null;
             }
 
-            var user = await UtenteViewModel.GetViewModel(_libreria,id);
+            var user = await UtenteViewModel.GetViewModel(_libreria, id);
 
-            return user; 
-        }
-
-        public async Task SetUser(int? userId, string path = "NoPath")
-        {
-
-            var httpContext = _contextAccessor.HttpContext;
-
-            if (httpContext == null)
-                return;
-
-            var session = httpContext.Session;
-
-            if (session == null)
-                return;
-
-            if (userId == null)
-            {
-                session.Clear();
-            }
-            else
-            {
-                session.SetInt32("UserId", userId.Value);
-
-            }
+            return user;
         }
     }
 }

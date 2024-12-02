@@ -18,7 +18,7 @@
         <div class="Libri">
             @foreach(Libro item in Model)
             {
-                UtenteViewModel UtenteLoggato = ViewData["Utente"] as UtenteViewModel;
+                UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel() {Nome = "NULL", Email = "NULL", Ruolo="NULL" });
 
                 <div class="Libro @(item.Disponibilita > 0 ? "" : "NonDisponibile")" id="Libro-@(item.ID)">
                     <div class="Img">

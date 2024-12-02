@@ -1,23 +1,26 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using NuGet.Protocol;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 using Proj_Biblioteca.ViewModels;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Proj_Biblioteca.Controllers;
 
 public class PrenotazioniController : BaseController
 {
-
-    public PrenotazioniController(IHttpContextAccessor contextAccessor, ILogger<PrenotazioniController> logger, LibreriaContext DbContext) : base(contextAccessor, logger, DbContext)
+    public PrenotazioniController(IHttpContextAccessor contextAccessor, ILogger<BaseController> logger, LibreriaContext Dbcontext, UserManager<Utente> userManager, SignInManager<Utente> signInManager, RoleManager<Role> roleManager) : base(contextAccessor, logger, Dbcontext, userManager, signInManager, roleManager)
     {
     }
 
+    [Authorize]
     public async Task<IActionResult> Prenota(int idLibro)
     {
-        UtenteViewModel? UtenteLoggato = await GetUser("/Prentazioni/Prenota");
+        UtenteViewModel? UtenteLoggato = await GetUser();
         if (UtenteLoggato != null)
         {
             Libro? libro = await _libreria.Libri.AsNoTracking().FirstOrDefaultAsync(l => l.ID == idLibro);
@@ -33,7 +36,7 @@ public class PrenotazioniController : BaseController
      * Ritorna tutte le prenotazioni di tutti gli utenti in forma IEnumerable<Prenotazioni>
      */
     [HttpGet]
-    public async Task<IActionResult> ElencoPrenotazioni(int id)
+    public async Task<IActionResult> ElencoPrenotazioni(string id)
     {
         UtenteViewModel? UtenteLoggato = await UtenteViewModel.GetViewModel(_libreria,id);
 
@@ -44,9 +47,15 @@ public class PrenotazioniController : BaseController
 
             foreach (var prenotazione in prenotazioni)
             {
-                var Utente = await _libreria.Utenti.AsNoTracking().FirstOrDefaultAsync(u => u.ID == prenotazione.UtenteID);
-                prenotazione.UtenteViewModel = new UtenteViewModel() { ID = Utente.ID, DDR = Utente.DDR, Email = Utente.Email, Nome = Utente.Nome, Ruolo = Utente.Ruolo };
+                var Utente = await _libreria.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == prenotazione.IdUtente);
+                if (Utente != null)
+                {
+                    prenotazione.UtenteViewModel = await UtenteViewModel.GetViewModel(_libreria,Utente.Id);
+                }
+                else
+                    return NotFound();
             }
+
 
             string JsonPrenotazioni = prenotazioni.ToJson();
 
@@ -61,18 +70,18 @@ public class PrenotazioniController : BaseController
      * Ritorna tutte le prenotazioni dell'utente loggato in forma IEnumerable<Prenotazioni>
      */
     [HttpGet]
-    public async Task<IActionResult> GetPrenotazioni(int id)
+    public async Task<IActionResult> GetPrenotazioni(string id)
     {
         UtenteViewModel? UtenteLoggato = await UtenteViewModel.GetViewModel(_libreria, id);
 
         if (UtenteLoggato != null)
         {
 
-            IEnumerable<Prenotazione> prenotazioni = await _libreria.Prenotazioni.Include(p => p.Libro).AsNoTracking().Where(p => p.UtenteID == UtenteLoggato.ID).ToListAsync();
+            IEnumerable<Prenotazione> prenotazioni = await _libreria.Prenotazioni.Include(p => p.Libro).AsNoTracking().Where(p => p.IdUtente == id).ToListAsync();
 
             foreach (var prenotazione in prenotazioni)
             {
-                prenotazione.UtenteViewModel = new UtenteViewModel() { ID = UtenteLoggato.ID, DDR = UtenteLoggato.DDR, Email = UtenteLoggato.Email, Nome = UtenteLoggato.Nome, Ruolo = UtenteLoggato.Ruolo };
+                prenotazione.UtenteViewModel = UtenteLoggato;
             }
 
 
@@ -96,9 +105,10 @@ public class PrenotazioniController : BaseController
      * Rimuove la prenotazione selezionata attraverso all'id
      */
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> RimuoviPrenotazione(int id)
     {
-        UtenteViewModel? UtenteLoggato = await GetUser("Prenotazioni/RimuoviPrenotazione");
+        UtenteViewModel? UtenteLoggato = await GetUser();
         if (UtenteLoggato != null)
         {
             Prenotazione? prenotazione;
@@ -106,7 +116,7 @@ public class PrenotazioniController : BaseController
             if (UtenteLoggato.Ruolo == "Admin")
                 prenotazione = await _libreria.Prenotazioni.Include(p => p.Libro).AsNoTracking().FirstOrDefaultAsync(p => p.ID == id);
             else
-                prenotazione = await _libreria.Prenotazioni.Include(p => p.Libro).AsNoTracking().Where(p => p.UtenteID == UtenteLoggato.ID).FirstOrDefaultAsync(p => p.ID == id);
+                prenotazione = await _libreria.Prenotazioni.Include(p => p.Libro).AsNoTracking().Where(p => p.IdUtente == UtenteLoggato.Id).FirstOrDefaultAsync(p => p.ID == id);
 
             try
             {
@@ -115,10 +125,12 @@ public class PrenotazioniController : BaseController
 
                 if (prenotazione != null)
                 {
+                    Libro? libro = prenotazione.Libro;
+                    if (libro == null)
+                        return NotFound();
+
                     _libreria.Remove(prenotazione);
                     await _libreria.SaveChangesAsync();
-
-                    Libro? libro = prenotazione.Libro;
 
                     libro.Disponibilita++;
                     _libreria.Update(libro);
@@ -156,12 +168,16 @@ public class PrenotazioniController : BaseController
      * Controlla se l'utente ha meno di 3 prenotazioni o non ha già prenotato lo stesso libro
      */
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> AggiungiPrenotazione(int? idLibro, string inizio, string fine)
     {
         if (idLibro == null || inizio == null || fine == null)
             return BadRequest("Inserisci tutti i dati");
 
-        UtenteViewModel? UtenteLoggato = await GetUser("/Prenotazioni/AggiungiPrenotazione");
+        UtenteViewModel? UtenteLoggato = await GetUser();
+        if(UtenteLoggato== null)
+            return NotFound();
+
         DateTime dataInizio = DateTime.Parse(inizio) + DateTime.Now.TimeOfDay;
         DateTime dataFine = DateTime.Parse(fine) + DateTime.Now.TimeOfDay;
 
@@ -169,7 +185,7 @@ public class PrenotazioniController : BaseController
 
         IEnumerable<Prenotazione>? prenotazioniUtente;
 
-        string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/" + UtenteLoggato.ID;
+        string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/" + UtenteLoggato.Id;
         using (var httpClient = new HttpClient())
         {
             HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
@@ -192,15 +208,18 @@ public class PrenotazioniController : BaseController
 
         if (UtenteLoggato != null)
         {
+            if (prenotazioniUtente == null)
+                return BadRequest();
+
             if (prenotazioniUtente.Count() < 3 && //check se l'utente loggato ha meno di 3 prenotazioni
-                prenotazioniUtente.Where(p => p.Libro.ID == libro.ID).Count() < 1) //Check se l'utente loggato ha già lo stesso libro
+                !prenotazioniUtente.Any(p=> p.LibroID == libro.ID)) //Check se l'utente loggato ha già lo stesso libro
             {
 
                 try
                 {
                     if (DateTime.Parse(inizio).AddDays(1) >= DateTime.Now && DateTime.Parse(inizio) <= DateTime.Parse(fine) && libro.Disponibilita > 0 && DateTime.Parse(fine) <= DateTime.Parse(inizio).AddDays(libro.PrenotazioneMax + 1)) // check della data e della disponibilita
                     {
-                        _libreria.Add(new Prenotazione() { LibroID = libro.ID, UtenteID = UtenteLoggato.ID, DDI = DateTime.Parse(inizio), DDF = DateTime.Parse(fine) });
+                        _libreria.Add(new Prenotazione() { LibroID = libro.ID, IdUtente = UtenteLoggato.Id, DDI = DateTime.Parse(inizio), DDF = DateTime.Parse(fine) });
                         await _libreria.SaveChangesAsync();
 
 

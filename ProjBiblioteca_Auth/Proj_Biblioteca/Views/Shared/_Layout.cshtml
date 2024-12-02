@@ -15,9 +15,13 @@
 
         <div class="NavBar">
             <h1 class="TitoloHeader">Biblioteca</h1>
-            @if (ViewData["Utente"] != null && ((UtenteViewModel)ViewData["Utente"]).Ruolo == "Admin")
+            @if (ViewData["Utente"] != null)
             {
-                <i class="AggiungiLibro" onclick="AggiungiLibri()">+</i>
+                UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel() { Nome = "NULL", Email = "NULL", Ruolo = "NULL" });
+                if (UtenteLoggato.Ruolo == "Admin")
+                {
+                    <i c lass="AggiungiLibro" onclick="AggiungiLibri()">+</i>
+                }
             }
             <i class="fa fa-user Account"></i>
         </div>

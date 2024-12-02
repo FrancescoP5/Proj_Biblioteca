@@ -1,11 +1,19 @@
-﻿using Proj_Biblioteca.Models;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Proj_Biblioteca.Models;
 
 namespace Proj_Biblioteca.Data
 {
     public class DbInitializer
     {
-        public static void Initialize(LibreriaContext context)
+        public static void Initialize(LibreriaContext context, UserManager<Utente> userManager)
         {
+            Dictionary<string, string> RoleIDs = new()
+            {
+                {"Admin",Guid.NewGuid().ToString()},
+                {"Utente",Guid.NewGuid().ToString()},
+            };
+
             if (!context.Libri.Any())
             {
 
@@ -27,19 +35,53 @@ namespace Proj_Biblioteca.Data
                 context.SaveChanges();
             }
 
-            if(!context.Utenti.Any())
+            if (!context.Roles.Any())
             {
-                var utenti = new Utente[]
-                {
-                    new Utente{Nome = "Admin", Email = "Admin@Admin.com", Password = "Admin", DDR = DateTime.Now, Ruolo = "Admin"}
-                };
+                Role[] roles =
+                [
+                    new Role {Name = "Admin", NormalizedName="ADMIN",Id=RoleIDs["Admin"]},
+                    new Role {Name = "Utente", NormalizedName="UTENTE",Id=RoleIDs["Utente"]}
+                ];
 
-                context.Utenti.AddRange(utenti);
+                context.Roles.AddRange(roles);
                 context.SaveChanges();
             }
 
-        }
+            if (!context.Users.Any())
+            {
+                Dictionary<string, string> UserIDs = new()
+                {
+                    {"AdminUser",Guid.NewGuid().ToString()},
+                };
+                 
+                Utente[] admins =
+                [
+                    new Utente {Id=UserIDs["AdminUser"], UserName="Admin", Email = "Admin@Admin.com", PasswordHash=Encryption.Encrypt("Admin"), SecurityStamp= Guid.NewGuid().ToString()}
+                    
+                ];
 
+
+                
+
+                foreach(Utente admin in admins)
+                {
+                    userManager.CreateAsync(admin).Wait();
+                }
+
+                List<IdentityUserRole<string>> roles = new();
+
+                foreach(Utente admin in admins)
+                {
+                    roles.Add(new IdentityUserRole<string> { RoleId = RoleIDs["Admin"], UserId = admin.Id });
+                }
+
+                    context.UserRoles.AddRange(roles);
+                    
+                    context.SaveChanges();
+
+            }
+
+        }
 
     }
 }

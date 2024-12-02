@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Proj_Biblioteca.Models;
 using Proj_Biblioteca.ViewModels;
 using Proj_Biblioteca.Data;
+using Newtonsoft.Json;
 
 namespace Proj_Biblioteca_Test
 {
@@ -19,7 +20,7 @@ namespace Proj_Biblioteca_Test
 
             string Email_ExpectedOutput = "Example@Example.com";
 
-            UtenteViewModel Utente = new UtenteViewModel() { DDR = new DateTime(2000, 1, 1, 1, 1, 1, 1, 1), Email = Email_Input, ID = 0, Nome = "Example", Ruolo = "Utente" };
+            UtenteViewModel Utente = new UtenteViewModel() { DDR = new DateTime(2000, 1, 1, 1, 1, 1, 1, 1), Email = Email_Input, Id = "0", Nome = "Example", Ruolo = "Utente" };
 
             string Email_Output = Utente.Email;
 
@@ -35,7 +36,7 @@ namespace Proj_Biblioteca_Test
 
             string Email_ExpectedOutput = "Example@Example.com";
 
-            Utente Utente = new Utente() { DDR = new DateTime(2000, 1, 1, 1, 1, 1, 1, 1), Email = Email_Input, ID = 0, Nome = "Example", Ruolo = "Utente", Password = "Example" };
+            Utente Utente = new Utente() { DDR = new DateTime(2000, 1, 1, 1, 1, 1, 1, 1), Email = Email_Input, Id = "0", UserName = "Example", PasswordHash = "Example" };
 
             string Email_Output = Utente.Email;
 
@@ -44,18 +45,6 @@ namespace Proj_Biblioteca_Test
 
         }
 
-        [TestMethod]
-        public void Test_Password()
-        {
-            string Password_Input = "Example";
 
-            string Password_ExpectedOutput = Encryption.Encrypt(Password_Input);
-
-            Utente Utente = new Utente() { DDR = new DateTime(2000, 1, 1, 1, 1, 1, 1, 1), Email = "Example@Example.com", ID = 0, Nome = "Example", Ruolo = "Utente", Password = Password_Input };
-
-            string Password_Output = Utente.Password;
-
-            Assert.AreEqual(Password_ExpectedOutput, Password_Output, "Password non corrispondenti");
-        }
     }
 }

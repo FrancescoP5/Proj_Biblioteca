@@ -1,24 +1,24 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 using Proj_Biblioteca.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Proj_Biblioteca.Controllers
 {
     public class LibroController : BaseController
     {
-
-
-        public LibroController(IHttpContextAccessor contextAccessor, ILogger<LibroController> logger, LibreriaContext DbContext) : base(contextAccessor, logger, DbContext)
+        public LibroController(IHttpContextAccessor contextAccessor, ILogger<BaseController> logger, LibreriaContext Dbcontext, UserManager<Utente> userManager, SignInManager<Utente> signInManager, RoleManager<Role> roleManager) : base(contextAccessor, logger, Dbcontext, userManager, signInManager, roleManager)
         {
-
         }
 
-
+        [AllowAnonymous]
         public async Task<IActionResult> Elenco()
         {
-            UtenteViewModel? UtenteLoggato = await GetUser("Libro/Elenco");
+            UtenteViewModel? UtenteLoggato = await GetUser();
             string apiUrl = "https://localhost:7139/Libro/GetLibri";
 
             List<Libro> libri;
@@ -40,6 +40,7 @@ namespace Proj_Biblioteca.Controllers
             return View();
         }
 
+        [Authorize(Roles ="Admin")]
         public async Task<IActionResult> Modifica(int id)
         {
 
@@ -59,9 +60,10 @@ namespace Proj_Biblioteca.Controllers
             return View(libro);
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AggiungiLibro()
         {
-            UtenteViewModel? UtenteLoggato = await GetUser("Libro/AggiungiLibro");
+            UtenteViewModel? UtenteLoggato = await GetUser();
             if (UtenteLoggato!= null && UtenteLoggato.Ruolo == "Admin")
                 return await Task.Run(() => View());
 
@@ -77,6 +79,7 @@ namespace Proj_Biblioteca.Controllers
          * Ritorna tutti i libri
          */
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetLibri()
         {
             try
@@ -96,6 +99,7 @@ namespace Proj_Biblioteca.Controllers
          */
 
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> FindLibro(int id)
         {
             try
@@ -115,9 +119,10 @@ namespace Proj_Biblioteca.Controllers
          * I parametri del libro vengono passati attraverso un form
          */
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Aggiungi([Bind("Titolo,Autore,PrenotazioneMax,ISBN,Disponibilita")] Libro libro)
         {
-            UtenteViewModel? UtenteLoggato = await GetUser("Libro/Aggiungi");
+            UtenteViewModel? UtenteLoggato = await GetUser();
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 try
@@ -171,9 +176,10 @@ namespace Proj_Biblioteca.Controllers
          * I parametri del libro vengono passati attraverso un form
          */
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Aggiorna([Bind("ID,Titolo,Autore,PrenotazioneMax,ISBN,Disponibilita")] Libro libro)
         {
-            UtenteViewModel? UtenteLoggato = await GetUser("Libro/Aggiorna");
+            UtenteViewModel? UtenteLoggato = await GetUser();
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 try
@@ -222,9 +228,10 @@ namespace Proj_Biblioteca.Controllers
          * Elimina un libro associato all'id
          */
         [HttpPost]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Elimina(int? id)
         {
-            UtenteViewModel? UtenteLoggato = await GetUser("Libro/Elimina");
+            UtenteViewModel? UtenteLoggato = await GetUser();
             if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
             {
                 if(id == null)
