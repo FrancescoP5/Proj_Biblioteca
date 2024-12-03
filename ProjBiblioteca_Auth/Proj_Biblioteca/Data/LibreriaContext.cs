@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace Proj_Biblioteca.Data
 {

@@ -1,7 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using NuGet.Protocol;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
@@ -13,17 +11,21 @@ namespace Proj_Biblioteca.Controllers;
 
 public class PrenotazioniController : BaseController
 {
-    public PrenotazioniController(IHttpContextAccessor contextAccessor, ILogger<BaseController> logger, LibreriaContext Dbcontext, UserManager<Utente> userManager, SignInManager<Utente> signInManager, RoleManager<Role> roleManager) : base(contextAccessor, logger, Dbcontext, userManager, signInManager, roleManager)
-    {
-    }
+    public PrenotazioniController
+        (
+            ILogger<BaseController> logger,
+            LibreriaContext Dbcontext,
+            UserManager<Utente> userManager,
+            SignInManager<Utente> signInManager,
+            RoleManager<Role> roleManager
+        ) : base(logger, Dbcontext, userManager, signInManager, roleManager) { }
 
-    [Authorize]
     public async Task<IActionResult> Prenota(int idLibro)
     {
         UtenteViewModel? UtenteLoggato = await GetUser();
         if (UtenteLoggato != null)
         {
-            Libro? libro = await _libreria.Libri.AsNoTracking().FirstOrDefaultAsync(l => l.ID == idLibro);
+            Libro? libro = await repoLibri.GetLibro(idLibro);
 
             return View(libro);
         }
@@ -36,32 +38,14 @@ public class PrenotazioniController : BaseController
      * Ritorna tutte le prenotazioni di tutti gli utenti in forma IEnumerable<Prenotazioni>
      */
     [HttpGet]
-    public async Task<IActionResult> ElencoPrenotazioni(string id)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ElencoPrenotazioni()
     {
-        UtenteViewModel? UtenteLoggato = await UtenteViewModel.GetViewModel(_libreria,id);
+        IEnumerable<Prenotazione?> prenotazioni = await repoPrenotazioni.GetPrenotazioni();
 
-        if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
-        {
+        string JsonPrenotazioni = prenotazioni.ToJson();
 
-            IEnumerable<Prenotazione> prenotazioni = await _libreria.Prenotazioni.Include(p=> p.Libro).AsNoTracking().ToListAsync();
-
-            foreach (var prenotazione in prenotazioni)
-            {
-                var Utente = await _libreria.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == prenotazione.IdUtente);
-                if (Utente != null)
-                {
-                    prenotazione.UtenteViewModel = await UtenteViewModel.GetViewModel(_libreria,Utente.Id);
-                }
-                else
-                    return NotFound();
-            }
-
-
-            string JsonPrenotazioni = prenotazioni.ToJson();
-
-            return Ok(Encryption.Encrypt(JsonPrenotazioni));
-        }
-        return NotFound();
+        return Ok(Encryption.Encrypt(JsonPrenotazioni));
     }
 
     // ~/Prenotazioni/GetPrenotazioni
@@ -70,26 +54,15 @@ public class PrenotazioniController : BaseController
      * Ritorna tutte le prenotazioni dell'utente loggato in forma IEnumerable<Prenotazioni>
      */
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> GetPrenotazioni(string id)
     {
-        UtenteViewModel? UtenteLoggato = await UtenteViewModel.GetViewModel(_libreria, id);
+        IEnumerable<Prenotazione?> prenotazioni = await repoPrenotazioni.GetPrenotazioni(id);
 
-        if (UtenteLoggato != null)
-        {
+        string JsonPrenotazioni = prenotazioni.ToJson();
 
-            IEnumerable<Prenotazione> prenotazioni = await _libreria.Prenotazioni.Include(p => p.Libro).AsNoTracking().Where(p => p.IdUtente == id).ToListAsync();
+        return Ok(Encryption.Encrypt(JsonPrenotazioni));
 
-            foreach (var prenotazione in prenotazioni)
-            {
-                prenotazione.UtenteViewModel = UtenteLoggato;
-            }
-
-
-            string JsonPrenotazioni = prenotazioni.ToJson();
-
-            return Ok(Encryption.Encrypt(JsonPrenotazioni));
-        }
-        return NotFound();
 
     }
 
@@ -113,43 +86,37 @@ public class PrenotazioniController : BaseController
         {
             Prenotazione? prenotazione;
 
-            if (UtenteLoggato.Ruolo == "Admin")
-                prenotazione = await _libreria.Prenotazioni.Include(p => p.Libro).AsNoTracking().FirstOrDefaultAsync(p => p.ID == id);
-            else
-                prenotazione = await _libreria.Prenotazioni.Include(p => p.Libro).AsNoTracking().Where(p => p.IdUtente == UtenteLoggato.Id).FirstOrDefaultAsync(p => p.ID == id);
+            prenotazione = await repoPrenotazioni.GetPrenotazione(id);
 
-            try
+            if (UtenteLoggato.Ruolo == "Utente" && prenotazione != null)
+                prenotazione = prenotazione.IdUtente == UtenteLoggato.Id ? prenotazione : null;
+
+            if (prenotazione != null)
             {
+                Libro? libro = prenotazione.Libro;
+                if (libro == null)
+                    return NotFound();
 
+                bool DeleteResult = await repoPrenotazioni.Delete(prenotazione);
 
-
-                if (prenotazione != null)
+                if (DeleteResult)
                 {
-                    Libro? libro = prenotazione.Libro;
-                    if (libro == null)
-                        return NotFound();
-
-                    _libreria.Remove(prenotazione);
-                    await _libreria.SaveChangesAsync();
-
                     libro.Disponibilita++;
-                    _libreria.Update(libro);
-                    await _libreria.SaveChangesAsync();
-
-                    _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Prenotazione rimossa alle ore {DateTime.Now:HH:mm:ss}");
-                    return Ok("PrenotazioneRimossa");
+                    bool UpdateResult = await repoLibri.Update(libro);
+                    if (UpdateResult)
+                    {
+                        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Prenotazione rimossa alle ore {DateTime.Now:HH:mm:ss}");
+                        return Ok("PrenotazioneRimossa");
+                    }
                 }
                 else
                 {
                     _logger.LogInformation($"Utente: {UtenteLoggato.Nome} rimozione Prenotazione fallita alle ore {DateTime.Now:HH:mm:ss}");
+                    return StatusCode(500, "Errore nel salvataggio dei cambiamenti");
                 }
+
             }
-            catch (DbUpdateException ex)
-            {
-                //Errore database 
-                _logger.LogError($"{ex.ToString()} || {DateTime.Now:HH:mm:ss.ff}");
-                return StatusCode(500);
-            }
+
         }
         else
         {
@@ -171,87 +138,51 @@ public class PrenotazioniController : BaseController
     [Authorize]
     public async Task<IActionResult> AggiungiPrenotazione(int? idLibro, string inizio, string fine)
     {
+        UtenteViewModel? UtenteLoggato = await GetUser();
+
+        if (UtenteLoggato == null)
+            return BadRequest();
+
         if (idLibro == null || inizio == null || fine == null)
             return BadRequest("Inserisci tutti i dati");
 
-        UtenteViewModel? UtenteLoggato = await GetUser();
-        if(UtenteLoggato== null)
-            return NotFound();
+        Libro? libro = await repoLibri.GetLibro(idLibro ?? 0);
 
-        DateTime dataInizio = DateTime.Parse(inizio) + DateTime.Now.TimeOfDay;
-        DateTime dataFine = DateTime.Parse(fine) + DateTime.Now.TimeOfDay;
-
-        Libro? libro = await _libreria.Libri.AsNoTracking().FirstOrDefaultAsync(l => l.ID == idLibro);
-
-        IEnumerable<Prenotazione>? prenotazioniUtente;
-
-        string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/" + UtenteLoggato.Id;
-        using (var httpClient = new HttpClient())
-        {
-            HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
-
-            string prenotazioniCrypted = await response.Content.ReadAsStringAsync();
-            string prenotazioniJson = Encryption.Decrypt(prenotazioniCrypted);
-
-
-            if (response.IsSuccessStatusCode)
-                prenotazioniUtente = JsonSerializer.Deserialize<IEnumerable<Prenotazione>>(prenotazioniJson);
-            else
-            {
-                return BadRequest("Errore nel recupero delle prenotazioni riprovare..");
-            }
-
-        }
+        IEnumerable<Prenotazione?> prenotazioniUtente = await repoPrenotazioni.GetPrenotazioni(UtenteLoggato.Id ?? "0");
 
         if (libro == null)
             return RedirectToAction("Elenco", "Libro");
 
-        if (UtenteLoggato != null)
+        if (prenotazioniUtente == null)
+            return BadRequest();
+
+        if (prenotazioniUtente.Count() < 3 && //check se l'utente loggato ha meno di 3 prenotazioni
+            !prenotazioniUtente.Any(p => p.LibroID == libro.ID)) //Check se l'utente loggato ha già lo stesso libro
         {
-            if (prenotazioniUtente == null)
-                return BadRequest();
 
-            if (prenotazioniUtente.Count() < 3 && //check se l'utente loggato ha meno di 3 prenotazioni
-                !prenotazioniUtente.Any(p=> p.LibroID == libro.ID)) //Check se l'utente loggato ha già lo stesso libro
+
+            bool AddResult = await repoPrenotazioni.Insert(new Prenotazione() { LibroID = libro.ID, IdUtente = UtenteLoggato.Id, DDI = DateTime.Parse(inizio), DDF = DateTime.Parse(fine) });
+
+            if (AddResult)
             {
-
-                try
+                libro.Disponibilita--;
+                bool UpdateResult = await repoLibri.Update(libro);
+                if (UpdateResult)
                 {
-                    if (DateTime.Parse(inizio).AddDays(1) >= DateTime.Now && DateTime.Parse(inizio) <= DateTime.Parse(fine) && libro.Disponibilita > 0 && DateTime.Parse(fine) <= DateTime.Parse(inizio).AddDays(libro.PrenotazioneMax + 1)) // check della data e della disponibilita
-                    {
-                        _libreria.Add(new Prenotazione() { LibroID = libro.ID, IdUtente = UtenteLoggato.Id, DDI = DateTime.Parse(inizio), DDF = DateTime.Parse(fine) });
-                        await _libreria.SaveChangesAsync();
-
-
-                        libro.Disponibilita--;
-                        _libreria.Update(libro);
-                        await _libreria.SaveChangesAsync();
-
-
-                        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.ID} Prenotazione aggiunta alle ore {DateTime.Now:HH:mm:ss}");
-                        return Ok();
-                    }
-                    else
-                        return BadRequest();
-
+                    _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.ID} Prenotazione aggiunta alle ore {DateTime.Now:HH:mm:ss}");
+                    return Ok();
                 }
-                catch (DbUpdateException ex)
-                {
-                    //Errore database 
-                    _logger.LogError($"{ex.ToString()} || {DateTime.Now:HH:mm:ss.ff}");
-                    return StatusCode(500);
-                }
-            }
-            else
-            {
-                _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Prenotazioni massime raggiunte {DateTime.Now:HH:mm:ss}");
-                return BadRequest("Attenzione, Prenotazione massima raggiunta");
             }
         }
         else
         {
-            _logger.LogInformation($"Nessun Account loggato {DateTime.Now:HH:mm:ss}");
-            return BadRequest("Errore, Nessun account loggato");
+            _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Prenotazioni massime raggiunte {DateTime.Now:HH:mm:ss}");
+            return BadRequest("Attenzione, Prenotazione massima raggiunta");
         }
+
+        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} aggiunta Prenotazione fallita alle ore {DateTime.Now:HH:mm:ss}");
+        return StatusCode(500, "Errore nel salvataggio dei cambiamenti");
+
     }
 }
+
