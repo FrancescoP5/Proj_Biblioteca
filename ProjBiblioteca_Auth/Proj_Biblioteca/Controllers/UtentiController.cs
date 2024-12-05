@@ -1,28 +1,33 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using NuGet.Protocol;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
+using Proj_Biblioteca.ViewModels;
 using System.Net.Mail;
-using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-
+using Microsoft.AspNetCore.Authorization;
 
 namespace Proj_Biblioteca.Controllers
 {
 
     public class UtentiController : BaseController
     {
-        public UtentiController(IHttpContextAccessor contextAccessor, ILogger<BaseController> logger) : base(contextAccessor, logger)
-        {
-        }
+        public UtentiController
+            (
+                ILogger<BaseController> logger, 
+                LibreriaContext Dbcontext, 
+                UserManager<Utente> userManager, 
+                SignInManager<Utente> signInManager, 
+                RoleManager<Role> roleManager
+            ) 
+            : base(logger, Dbcontext, userManager, signInManager, roleManager){}
 
         public async Task<IActionResult> AccountPage()
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/AccountPage");
-            IEnumerable<Prenotazione>? prenotazioni = null;
-
-            
+            UtenteViewModel? UtenteLoggato = await GetUser();
+            IEnumerable<Prenotazione?> prenotazioni;
 
             if (ViewData.ContainsKey("Messaggio"))
                 ViewData["Messaggio"] = TempData["Messaggio"];
@@ -33,150 +38,109 @@ namespace Proj_Biblioteca.Controllers
             {
                 if (UtenteLoggato.Ruolo == "Admin")
                 {
-                    string apiUrl = "https://localhost:7139/Prenotazioni/ElencoPrenotazioni/"+UtenteLoggato.Id;
+                    prenotazioni = await repoPrenotazioni.GetPrenotazioni();
 
+                    if (ViewData.ContainsKey("Utente"))
+                        ViewData["Utente"] = UtenteLoggato;
+                    else
+                        ViewData.Add("Utente", UtenteLoggato);
 
-                    using (var httpClient = new HttpClient())
-                    {
-                        HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
-
-                        string prenotazioniCrypted = await response.Content.ReadAsStringAsync();
-                        string prenotazioniJson = Encryption.Decrypt(prenotazioniCrypted);
-                        prenotazioni = JsonSerializer.Deserialize<IEnumerable<Prenotazione>>(prenotazioniJson);
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            if (ViewData.ContainsKey("Utente"))
-                                ViewData["Utente"] = UtenteLoggato;
-                            else
-                                ViewData.Add("Utente", UtenteLoggato);
-
-                            return View(prenotazioni);
-                        }
-
-                    }
+                    return View(prenotazioni);
                 }
                 else
                 {
-                    string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/" + UtenteLoggato.Id;
+                    prenotazioni = await repoPrenotazioni.GetPrenotazioni(UtenteLoggato.Id??"0");
 
+                    if (ViewData.ContainsKey("Utente"))
+                        ViewData["Utente"] = UtenteLoggato;
+                    else
+                        ViewData.Add("Utente", UtenteLoggato);
 
-                    using (var httpClient = new HttpClient())
-                    {
+                    return View(prenotazioni);
 
-                        HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
-
-                        string prenotazioniCrypted = await response.Content.ReadAsStringAsync();
-                        string prenotazioniJson = Encryption.Decrypt(prenotazioniCrypted);
-                        prenotazioni = JsonSerializer.Deserialize<IEnumerable<Prenotazione>>(prenotazioniJson);
-
-                        if (response.IsSuccessStatusCode)
-                        {
-                            if (ViewData.ContainsKey("Utente"))
-                                ViewData["Utente"] = UtenteLoggato;
-                            else
-                                ViewData.Add("Utente", UtenteLoggato);
-
-                            return View(prenotazioni);
-                        }
-                    }
                 }
             }
             return View();
         }
 
+        [Authorize(Roles="Admin")]
         public async Task<IActionResult> GestioneRuoli()
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/GestioneRuoli");
-            if(UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
-            {
-                return View();
-            }
-            else
-            {
-                return RedirectToAction("AccountPage");
-            }
+                return await Task.Run(View);
         }
 
         [HttpPut]
-        public async Task<IActionResult> CambiaRuolo(int id, string ruolo)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CambiaRuolo(string id, string ruolo)
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/CambiaRuolo");
-
-            if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
+            if (await repoUtenti.CambiaRuolo(id, ruolo, _userManager))
             {
-                Utente utente = (Utente)await DAOUtente.GetInstance().Find(id);
-                if (utente != null)
-                {
-                    utente.Ruolo = ruolo;
-                    if (await DAOUtente.GetInstance().Update(utente))
-                        return Ok();
-                    else
-                        return BadRequest();
-                }
-                else
-                {
-                    return NotFound();
-                }
+                return Ok();
             }
-            else
-                return Unauthorized();
+            return BadRequest();
         }
 
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ListaUtenti(string email)
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/ListaUtenti");
-            if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
-            {
+            List<UtenteViewModel> utenti;
 
-                List<Utente> utenti = (await DAOUtente.GetInstance().ListaUtenti(email)).Cast<Utente>().ToList();
-                if (utenti.Count > 0)
-                {
-                    return Json(utenti);
-                }
-                else
-                {
-                    return BadRequest();
-                }
+            if (string.IsNullOrEmpty(email))
+            {
+                utenti = await UtenteViewModel.GetViewModel(_libreria);
             }
             else
             {
-                return Unauthorized();
+                utenti = (await UtenteViewModel.GetViewModel(_libreria)).Where(u => u.Email.ToLower().Contains(email.ToLower())).ToList();
             }
+
+            if (utenti.Count > 0)
+            {
+                return Json(utenti);
+            }
+            else
+            {
+                return BadRequest();
+            }
+
         }
+
+
 
         // ~/Utenti/Login/{email}{password}
         /*
          * controlla email e password e fa loggare un utente
          */
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AllowAnonymous]
         public async Task<IActionResult> Login(string email, string password)
         {
-
             _logger.LogInformation($"Tentativo di accesso alle ore {DateTime.Now:HH:mm:ss}");
 
-            if (MailAddress.TryCreate(email, out _))//check della validita email
+            Utente? utente = await repoUtenti.Login(email, Encryption.Encrypt(password));
+
+            if (utente != null)
             {
-                Utente? utente = (Utente)await DAOUtente.GetInstance().Login(email, password);
-
-                
-                if (utente != null)
+                try
                 {
-                    SetUser(utente.Id,"Utenti/Login");
-                    return RedirectToAction("AccountPage");
+                    await _signInManager.SignInAsync(utente, false);
                 }
-                else
+                catch (Exception ex)
                 {
-                    TempData["Messaggio"] = "Credenziali Errate, riprovare il Login";
-                    return RedirectToAction("AccountPage");
+                    TempData["Messaggio"] = "Errore.. riprovare";
+                    _logger.LogError(ex.ToString());
                 }
-                
-
+                return RedirectToAction("AccountPage");
             }
-            TempData["Messaggio"] = "Errore nel Login riprovare..";
-            return RedirectToAction("AccountPage" );
+            else
+            {
+                TempData["Messaggio"] = "Credenziali Errate, riprovare il Login";
+                return RedirectToAction("AccountPage");
+            }
+
         }
 
         // ~/Utenti/Registrazione/{nome}{email}{password}
@@ -184,34 +148,16 @@ namespace Proj_Biblioteca.Controllers
          * Controlla nome, email e password inseriti e crea un account
          */
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AllowAnonymous]
         public async Task<IActionResult> Registrazione(string nome, string email, string password)
         {
-
-            string passwordRGX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,10}$"; //Regex per la validazione di una password
-            //fra gli 8-10 caratteri almeno una maiuscola una minuscola un numero e un carattere speciale (@$!%*?&)
-
-            if (MailAddress.TryCreate(email, out _) == false || Regex.Match(password, passwordRGX).Success == false)
-            {
-                _logger.LogInformation($"Registrazione fallita alle ore {DateTime.Now:HH:mm:ss}");
-                TempData["Messaggio"] = "Password o Email invalide per la Registazione";
-                return RedirectToAction("AccountPage");
-            }
-
-            if (await DAOUtente.GetInstance().Registrazione(nome, email, password))
-            {
-                //Messaggio di riuscita Registrazione
-                _logger.LogInformation($"Registrazione riuscita alle ore {DateTime.Now:HH:mm:ss}");
-
+            if (await repoUtenti.Registrazione(nome, email, password, _userManager))
                 return await Login(email, password);
-            }
-            else
-            {
-                //Messaggio di registrazione Fallita
-                _logger.LogInformation($"Registrazione fallita alle ore {DateTime.Now:HH:mm:ss}");
-                TempData["Messaggio"] = "Errore, Registrazione Fallita riprovare.";
-                return RedirectToAction("AccountPage" );
-            }
 
+            //Errore database 
+            TempData["Messaggio"] = "Errore, Registrazione Fallita riprovare.";
+            return RedirectToAction("AccountPage");
         }
 
         // ~/Utenti/Disconnect
@@ -219,12 +165,19 @@ namespace Proj_Biblioteca.Controllers
          * Disconnette l'utente loggato
          */
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> Disconnect()
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/Disconnect");
-           _logger.LogInformation($"Utente: {UtenteLoggato.Nome} disconnesso alle ore {DateTime.Now:HH:mm:ss}");
-            SetUser(null,"Utenti/Disconnect");
-            
+            _logger.LogInformation($"Utente disconnesso alle ore {DateTime.Now:HH:mm:ss}");
+            try
+            {
+                await _signInManager.SignOutAsync();
+            }
+            catch(Exception ex) 
+            {
+                _logger.LogError(ex.ToString());
+            }
             return RedirectToAction("AccountPage");
         }
 
@@ -235,46 +188,31 @@ namespace Proj_Biblioteca.Controllers
          * e resetta tutte le prenotazioni
          */
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> Delete()
         {
-            Utente? UtenteLoggato = await GetUser("Utenti/Delete");
+            UtenteViewModel? UtenteLoggato = await GetUser();
             if (UtenteLoggato != null)
             {
-                List<Prenotazione> prenotazioni;
-                prenotazioni = (await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Cast<Prenotazione>().ToList();
-
-                foreach (Prenotazione p in prenotazioni)
+                var Utente = await repoUtenti.GetUtente(UtenteLoggato.Id ?? "0");
+                try
                 {
-                    if (await DAOUtente.GetInstance().RimuoviPrenotazione(p) == false)
-                    {
-                        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Reset Prenotazioni fallito {DateTime.Now:HH:mm:ss}");
-                        return (RedirectToAction("AccountPage"));
-                    }
+                    await _signInManager.SignOutAsync();
                 }
-                if (await DAOUtente.GetInstance().Delete(UtenteLoggato.Id))
+                catch (Exception ex)
                 {
-                    
-
-
-                    _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Eliminazione riuscita alle ore {DateTime.Now:HH:mm:ss}");
-                    SetUser(null,"Utenti/Delete");
-                    return RedirectToAction("AccountPage");
-
-                    //Messaggio di eliminazione riuscita
+                    _logger.LogError(ex.Message);
                 }
-                else
-                {
-                    _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Eliminazione fallita alle ore {DateTime.Now:HH:mm:ss}");
-                    return RedirectToAction("AccountPage");
-                    //Messaggio di eliminazione fallita
-                }
+                await repoUtenti.Delete(Utente);
 
+                _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Eliminazione riuscita alle ore {DateTime.Now:HH:mm:ss}");
             }
             else
             {
                 _logger.LogInformation($"Nessun Account loggato {DateTime.Now:HH:mm:ss}");
-                return RedirectToAction("AccountPage");
             }
+            return RedirectToAction("AccountPage");
         }
     }
 }

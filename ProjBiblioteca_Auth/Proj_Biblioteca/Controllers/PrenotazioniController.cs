@@ -1,27 +1,31 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using NuGet.Protocol;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
-using System.Security.Permissions;
-using System.Text;
+using Proj_Biblioteca.ViewModels;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Proj_Biblioteca.Controllers;
 
 public class PrenotazioniController : BaseController
 {
-
-    public PrenotazioniController(IHttpContextAccessor contextAccessor, ILogger<PrenotazioniController> logger) : base(contextAccessor, logger)
-    {
-    }
+    public PrenotazioniController
+        (
+            ILogger<BaseController> logger,
+            LibreriaContext Dbcontext,
+            UserManager<Utente> userManager,
+            SignInManager<Utente> signInManager,
+            RoleManager<Role> roleManager
+        ) : base(logger, Dbcontext, userManager, signInManager, roleManager) { }
 
     public async Task<IActionResult> Prenota(int idLibro)
     {
-        Utente? UtenteLoggato = await GetUser("/Prentazioni/Prenota");
+        UtenteViewModel? UtenteLoggato = await GetUser();
         if (UtenteLoggato != null)
         {
-            Libro libro = new Libro();
-            libro = (Libro)await DAOLibro.GetInstance().Find(idLibro);
+            Libro? libro = await repoLibri.GetLibro(idLibro);
 
             return View(libro);
         }
@@ -34,19 +38,14 @@ public class PrenotazioniController : BaseController
      * Ritorna tutte le prenotazioni di tutti gli utenti in forma IEnumerable<Prenotazioni>
      */
     [HttpGet]
-    public async Task<IActionResult> ElencoPrenotazioni(int id)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ElencoPrenotazioni()
     {
-        Utente? UtenteLoggato = (Utente)await DAOUtente.GetInstance().Find(id);
+        IEnumerable<Prenotazione?> prenotazioni = await repoPrenotazioni.GetPrenotazioni();
 
-        if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
-        {
+        string JsonPrenotazioni = prenotazioni.ToJson();
 
-            IEnumerable<Prenotazione> prenotazioni = (await DAOUtente.GetInstance().ElencoPrenotazioni()).Cast<Prenotazione>();
-            string JsonPrenotazioni = prenotazioni.ToJson();
-
-            return Ok(Encryption.Encrypt(JsonPrenotazioni));
-        }
-        return NotFound();
+        return Ok(Encryption.Encrypt(JsonPrenotazioni));
     }
 
     // ~/Prenotazioni/GetPrenotazioni
@@ -55,19 +54,15 @@ public class PrenotazioniController : BaseController
      * Ritorna tutte le prenotazioni dell'utente loggato in forma IEnumerable<Prenotazioni>
      */
     [HttpGet]
-    public async Task<IActionResult> GetPrenotazioni(int id)
+    [Authorize]
+    public async Task<IActionResult> GetPrenotazioni(string id)
     {
-        Utente? UtenteLoggato = (Utente)await DAOUtente.GetInstance().Find(id);
+        IEnumerable<Prenotazione?> prenotazioni = await repoPrenotazioni.GetPrenotazioni(id);
 
-        if (UtenteLoggato != null)
-        {
+        string JsonPrenotazioni = prenotazioni.ToJson();
 
-            IEnumerable<Prenotazione> prenotazioni = (await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Cast<Prenotazione>();
-            string JsonPrenotazioni = prenotazioni.ToJson();
+        return Ok(Encryption.Encrypt(JsonPrenotazioni));
 
-            return Ok(Encryption.Encrypt(JsonPrenotazioni));
-        }
-        return NotFound();
 
     }
 
@@ -83,26 +78,45 @@ public class PrenotazioniController : BaseController
      * Rimuove la prenotazione selezionata attraverso all'id
      */
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> RimuoviPrenotazione(int id)
     {
-        Utente? UtenteLoggato = await GetUser("Prenotazioni/RimuoviPrenotazione");
+        UtenteViewModel? UtenteLoggato = await GetUser();
         if (UtenteLoggato != null)
         {
             Prenotazione? prenotazione;
-            if (UtenteLoggato.Ruolo == "Admin")
-                prenotazione = (Prenotazione?)(await DAOUtente.GetInstance().FindPrenotazione(id));
-            else
-                prenotazione = (Prenotazione?)(await DAOUtente.GetInstance().PrenotazioniUtente(UtenteLoggato)).Find(p => p.Id == id);
 
-            if (prenotazione != null && await DAOUtente.GetInstance().RimuoviPrenotazione(prenotazione) )
+            prenotazione = await repoPrenotazioni.GetPrenotazione(id);
+
+            if (UtenteLoggato.Ruolo == "Utente" && prenotazione != null)
+                prenotazione = prenotazione.IdUtente == UtenteLoggato.Id ? prenotazione : null;
+
+            if (prenotazione != null)
             {
-                _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Prenotazione rimossa alle ore {DateTime.Now:HH:mm:ss}");
-                return Ok("PrenotazioneRimossa");
+                Libro? libro = prenotazione.Libro;
+                if (libro == null)
+                    return NotFound();
+
+                bool DeleteResult = await repoPrenotazioni.Delete(prenotazione);
+
+                if (DeleteResult)
+                {
+                    libro.Disponibilita++;
+                    bool UpdateResult = await repoLibri.Update(libro);
+                    if (UpdateResult)
+                    {
+                        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Prenotazione rimossa alle ore {DateTime.Now:HH:mm:ss}");
+                        return Ok("PrenotazioneRimossa");
+                    }
+                }
+                else
+                {
+                    _logger.LogInformation($"Utente: {UtenteLoggato.Nome} rimozione Prenotazione fallita alle ore {DateTime.Now:HH:mm:ss}");
+                    return StatusCode(500, "Errore nel salvataggio dei cambiamenti");
+                }
+
             }
-            else
-            {
-                _logger.LogInformation($"Utente: {UtenteLoggato.Nome} rimozione Prenotazione fallita alle ore {DateTime.Now:HH:mm:ss}");
-            }
+
         }
         else
         {
@@ -121,64 +135,54 @@ public class PrenotazioniController : BaseController
      * Controlla se l'utente ha meno di 3 prenotazioni o non ha già prenotato lo stesso libro
      */
     [HttpPost]
-    public async Task<IActionResult> AggiungiPrenotazione(int idLibro, string inizio, string fine)
+    [Authorize]
+    public async Task<IActionResult> AggiungiPrenotazione(int? idLibro, string inizio, string fine)
     {
+        UtenteViewModel? UtenteLoggato = await GetUser();
+
+        if (UtenteLoggato == null)
+            return BadRequest();
+
         if (idLibro == null || inizio == null || fine == null)
             return BadRequest("Inserisci tutti i dati");
 
-        Utente? UtenteLoggato = await GetUser("/Prenotazioni/AggiungiPrenotazione");
-        DateTime dataInizio = DateTime.Parse(inizio) + DateTime.Now.TimeOfDay;
-        DateTime dataFine = DateTime.Parse(fine) + DateTime.Now.TimeOfDay; 
+        Libro? libro = await repoLibri.GetLibro(idLibro ?? 0);
 
-        Libro libro = (Libro)await DAOLibro.GetInstance().Find(idLibro);
-
-        List<Prenotazione> prenotazioniUtente;
-
-        string apiUrl = "https://localhost:7139/Prenotazioni/GetPrenotazioni/"+UtenteLoggato.Id;
-        using (var httpClient = new HttpClient())
-        { 
-            HttpResponseMessage response = await httpClient.GetAsync(apiUrl);
-
-            string prenotazioniCrypted = await response.Content.ReadAsStringAsync();
-            string prenotazioniJson = Encryption.Decrypt(prenotazioniCrypted);
-
-
-            if (response.IsSuccessStatusCode)
-                prenotazioniUtente = (JsonSerializer.Deserialize<IEnumerable<Prenotazione>>(prenotazioniJson)).ToList();
-            else
-            {
-                return BadRequest("Errore nel recupero delle prenotazioni riprovare..");
-            }
-
-        }
+        IEnumerable<Prenotazione?> prenotazioniUtente = await repoPrenotazioni.GetPrenotazioni(UtenteLoggato.Id ?? "0");
 
         if (libro == null)
-            return RedirectToAction("Elenco","Libro");
+            return RedirectToAction("Elenco", "Libro");
 
-        if (UtenteLoggato != null)
+        if (prenotazioniUtente == null)
+            return BadRequest();
+
+        if (prenotazioniUtente.Count() < 3 && //check se l'utente loggato ha meno di 3 prenotazioni
+            !prenotazioniUtente.Any(p => p.LibroID == libro.ID)) //Check se l'utente loggato ha già lo stesso libro
         {
-            if (prenotazioniUtente.Count < 3 && //check se l'utente loggato ha meno di 3 prenotazioni
-                prenotazioniUtente.Find(p => p.Libro.Id == libro.Id) == null) //Check se l'utente loggato ha già lo stesso libro
-            {
-                if (await DAOUtente.GetInstance().AggiungiPrenotazione(UtenteLoggato, libro, dataInizio, dataFine))
-                {
-                    _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.Id} Prenotazione aggiunta alle ore {DateTime.Now:HH:mm:ss}");
-                    return Ok();
 
-                }
-            }
-            else
+
+            bool AddResult = await repoPrenotazioni.Insert(new Prenotazione() { LibroID = libro.ID, IdUtente = UtenteLoggato.Id, DDI = DateTime.Parse(inizio), DDF = DateTime.Parse(fine) });
+
+            if (AddResult)
             {
-                _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Prenotazioni massime raggiunte {DateTime.Now:HH:mm:ss}");
-                return BadRequest("Attenzione, Prenotazione massima raggiunta");
+                libro.Disponibilita--;
+                bool UpdateResult = await repoLibri.Update(libro);
+                if (UpdateResult)
+                {
+                    _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.ID} Prenotazione aggiunta alle ore {DateTime.Now:HH:mm:ss}");
+                    return Ok();
+                }
             }
         }
         else
         {
-            _logger.LogInformation($"Nessun Account loggato {DateTime.Now:HH:mm:ss}");
-            return BadRequest("Errore, Nessun account loggato");
+            _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Prenotazioni massime raggiunte {DateTime.Now:HH:mm:ss}");
+            return BadRequest("Attenzione, Prenotazione massima raggiunta");
         }
-        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} ID_Libro: {libro.Id} aggiunta Prenotazione fallita alle ore {DateTime.Now:HH:mm:ss}");
-        return BadRequest("Errore");
+
+        _logger.LogInformation($"Utente: {UtenteLoggato.Nome} aggiunta Prenotazione fallita alle ore {DateTime.Now:HH:mm:ss}");
+        return StatusCode(500, "Errore nel salvataggio dei cambiamenti");
+
     }
 }
+
