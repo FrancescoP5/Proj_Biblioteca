@@ -44,15 +44,6 @@ builder.Services.AddScoped<IRepoPrenotazioni, RepoPrenotazioni>();
 builder.Services.AddScoped<ILibreriaManager, LibreriaManager>();
 
 builder.Services.AddRazorPages();
-
-builder.Services.Configure<AntiforgeryOptions>(opts => 
-{ 
-    opts.Cookie.HttpOnly = true; 
-    opts.Cookie.SameSite = SameSiteMode.None;
-    opts.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-});
-
-
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
@@ -77,8 +68,6 @@ using (var scope = app.Services.CreateScope())
     var context = services.GetRequiredService<LibreriaContext>();
     context.Database.EnsureCreated();
 
-
-    var UserManager = services.GetRequiredService<UserManager<Utente>>();
 
     var UserManager = services.GetRequiredService<UserManager<Utente>>();
     var SignInManager = services.GetRequiredService<SignInManager<Utente>>();

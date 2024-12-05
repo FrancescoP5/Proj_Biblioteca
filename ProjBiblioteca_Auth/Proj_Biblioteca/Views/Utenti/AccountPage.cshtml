@@ -1,6 +1,7 @@
 ﻿@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 @using Proj_Biblioteca.Controllers;
 @using Proj_Biblioteca.Models;
+@using Proj_Biblioteca.ViewModels
 @model IEnumerable<Prenotazione>
 
 @{
@@ -14,11 +15,16 @@
     <link href="~/css/Account.css" rel="stylesheet"/>
 </head>
 <body>
+    <div class="jsAntiForgeryToken" >@Html.AntiForgeryToken()</div>
     @if(ViewData["Utente"]!=null) //Pagina account effettiva
     {
-        
-        Utente UtenteLoggato = ViewData["Utente"] as Utente;
-        
+
+
+
+        UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel(){Nome="NULL",Email="NULL",Ruolo="NULL"});
+
+
+
         <span>
             <strong>Benvenuto, @UtenteLoggato.Nome </strong>
             <button class="disconnect">Disconnettiti </button>
@@ -49,29 +55,24 @@
                         </tr>
                         @foreach (Prenotazione prenotazione in Model)
                         {
+
+                                
                             <tr class="table-values">
-<<<<<<< Updated upstream
-                                <th>@prenotazione.Id</th>
-                                <th>@prenotazione.Libro.Titolo</th>
-                                <th>@prenotazione.Libro.ISBN</th>
-                                <th>@prenotazione.DDI.ToString("yyyy-MM-dd HH:mm")</th>
-                                <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
-                                <th>@prenotazione.Utente.Email</th>
-=======
                                 <th>@((prenotazione?? new Prenotazione()).ID)</th>
                                 <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).Titolo)</th>
                                 <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).ISBN)</th>
-                                <th>@((prenotazione ?? new Prenotazione()).DDI.ToString("D"))</th>
-                                <th>@((prenotazione ?? new Prenotazione()).DDF.ToString("D"))</th>
+                                <th>@((prenotazione ?? new Prenotazione()).DDI.ToString("yyyy-MM-dd HH:mm"))</th>
+                                <th>@((prenotazione ?? new Prenotazione()).DDF.ToString("yyyy-MM-dd HH:mm"))</th>
                                 <th>@(((prenotazione ?? new Prenotazione()).UtenteViewModel ?? new UtenteViewModel() { Email = "NULL", Nome = "NULL", Ruolo = "NULL" }).Email)</th>
->>>>>>> Stashed changes
                                 <th>
-                                    <form onsubmit="RimuoviPrenotazione(@prenotazione.Id)">
-                                        <input value="@prenotazione.Id" name="id" hidden readonly />
+                                    <form onsubmit="return false">
+
+                                        <input value="@((prenotazione?? new Prenotazione()).ID)" name="id" hidden readonly />
                                         <button class="RimuoviPrenotazione" type="submit">X</button>
                                     </form>
                                 </th>
                             </tr>
+                            
                         }
                     </table>
                 </div>
@@ -94,22 +95,14 @@
                 @foreach(Prenotazione prenotazione in Model)
                 {
                         <tr class="table-values">
-<<<<<<< Updated upstream
-                            <th>@prenotazione.Libro.Titolo</th>
-                            <th>@prenotazione.Libro.Autore</th>
-                            <th>@prenotazione.Libro.ISBN</th>
-                            <th>@prenotazione.DDI.ToString("yyyy-MM-dd HH:mm")</th>
-                            <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
-=======
                             <th>@((prenotazione.Libro??new Libro()).Titolo)</th>
                             <th>@((prenotazione.Libro ?? new Libro()).Autore)</th>
                             <th>@((prenotazione.Libro ?? new Libro()).ISBN)</th>
-                            <th>@(prenotazione.DDI.ToString("D"))</th>
-                            <th>@(prenotazione.DDF.ToString("D"))</th>
->>>>>>> Stashed changes
+                            <th>@(prenotazione.DDI.ToString("yyyy-MM-dd HH:mm"))</th>
+                            <th>@(prenotazione.DDF.ToString("yyyy-MM-dd HH:mm"))</th>
                             <th>
-                                    <form onsubmit="RimuoviPrenotazione(@prenotazione.Id)">
-                                <input value="@prenotazione.Id" name="id" hidden readonly/>
+                                    <form onsubmit="return false">
+                                <input value="@(prenotazione.ID)" name="id" hidden readonly/>
                                         <button class="RimuoviPrenotazione" type="submit">X</button>
                                 </form>
                             </th>
@@ -132,6 +125,7 @@
             <br />
 
             <form class="FormAccesso" id="loginForm" action="/Utenti/Login" method="post">
+                @Html.AntiForgeryToken()
                 <label>Email:</label>
                 <input type="email" id="email" name="email" placeholder="example@example.com" required/>
                 <label>Password:</label>
@@ -142,7 +136,7 @@
             <br />
             @if (ViewData["Messaggio"]!=null)
             {
-                <span class="erroreLogin">@(ViewData["Messaggio"].ToString())</span><br />
+                <span class="erroreLogin">@((ViewData["Messaggio"]??"Null").ToString())</span><br />
             }
                 
             
@@ -154,6 +148,7 @@
             <br />
 
             <form class="FormRegistrazione" id="registrationForm" action="/Utenti/Registrazione" method="post">
+                @Html.AntiForgeryToken()
                 <label>Nome:</label>
                 <input type="text" id="nomeReg" name="nome" placeholder="Nome" required />
                 <label>Email:</label>

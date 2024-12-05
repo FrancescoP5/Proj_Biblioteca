@@ -1,4 +1,4 @@
-﻿
+﻿﻿
 const loginForm = document.getElementById("FormAccesso");
 const registrationForm = document.getElementById("FormRegistrazione");
 

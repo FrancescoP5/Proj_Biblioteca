@@ -13,8 +13,6 @@ namespace Proj_Biblioteca.Controllers
         {
             UtenteViewModel? UtenteLoggato = await _libreriaManager.Utenti().GetLoggedUser(User);
 
-            
-
             if (ViewData.ContainsKey("Messaggio"))
                 ViewData["Messaggio"] = TempData["Messaggio"];
             else

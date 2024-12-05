@@ -82,9 +82,8 @@ namespace Proj_Biblioteca.Controllers
 
             _logger.LogInformation($"Libro: {libro.Titolo} Aggiunta fallita dati invalidi alle ore {DateTime.Now:HH:mm:ss}");
 
-            return RedirectToAction("Elenco", "Libro");
-
             return RedirectToAction("AggiungiLibro", "Libro");
+
         }
 
 
