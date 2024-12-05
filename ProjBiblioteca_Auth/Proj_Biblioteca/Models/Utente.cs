@@ -1,18 +1,11 @@
-﻿using Proj_Biblioteca.Data;
+﻿using Microsoft.AspNetCore.Identity;
 using System.ComponentModel.DataAnnotations;
 
 namespace Proj_Biblioteca.Models
 {
-    public class Utente : Entity
+    public class Utente : IdentityUser<string>
     {
-        [Required]
-        public string Nome { get; set; }
-        [Required]
-        public string Email { get; set; }
-        [Required]
-        public string Ruolo { get; set; }
-
+        [DataType(DataType.DateTime)]
         public DateTime DDR { get; set; }
-
     }
 }
