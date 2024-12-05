@@ -1,11 +1,9 @@
-using Microsoft.AspNetCore.Antiforgery;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Proj_Biblioteca.DAL;
 using Proj_Biblioteca.Data;
-using System.Diagnostics;
-
+using Proj_Biblioteca.Models;
+using Proj_Biblioteca.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +23,13 @@ builder.Services.AddSession(options =>
     options.Cookie.MaxAge = TimeSpan.FromMinutes(10);
 });
 
+builder.Services.AddScoped<IRepoUtenti, RepoUtenti>();
+builder.Services.AddScoped<IRepoLibri, RepoLibri>();
+builder.Services.AddScoped<IRepoPrenotazioni, RepoPrenotazioni>();
+
+builder.Services.AddScoped<ILibreriaManager, LibreriaManager>();
+
+builder.Services.AddRazorPages();
 
 builder.Services.Configure<AntiforgeryOptions>(opts => 
 { 
@@ -47,6 +52,13 @@ if (!app.Environment.IsDevelopment())
 }
 
 
+
+    var UserManager = services.GetRequiredService<UserManager<Utente>>();
+    var SignInManager = services.GetRequiredService<SignInManager<Utente>>();
+    var RoleManager = services.GetRequiredService<RoleManager<Role>>();
+
+    DbInitializer.Initialize(context,UserManager);
+}
 
 
 app.UseHttpsRedirection();

@@ -50,12 +50,21 @@
                         @foreach (Prenotazione prenotazione in Model)
                         {
                             <tr class="table-values">
+<<<<<<< Updated upstream
                                 <th>@prenotazione.Id</th>
                                 <th>@prenotazione.Libro.Titolo</th>
                                 <th>@prenotazione.Libro.ISBN</th>
                                 <th>@prenotazione.DDI.ToString("yyyy-MM-dd HH:mm")</th>
                                 <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
                                 <th>@prenotazione.Utente.Email</th>
+=======
+                                <th>@((prenotazione?? new Prenotazione()).ID)</th>
+                                <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).Titolo)</th>
+                                <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).ISBN)</th>
+                                <th>@((prenotazione ?? new Prenotazione()).DDI.ToString("D"))</th>
+                                <th>@((prenotazione ?? new Prenotazione()).DDF.ToString("D"))</th>
+                                <th>@(((prenotazione ?? new Prenotazione()).UtenteViewModel ?? new UtenteViewModel() { Email = "NULL", Nome = "NULL", Ruolo = "NULL" }).Email)</th>
+>>>>>>> Stashed changes
                                 <th>
                                     <form onsubmit="RimuoviPrenotazione(@prenotazione.Id)">
                                         <input value="@prenotazione.Id" name="id" hidden readonly />
@@ -85,11 +94,19 @@
                 @foreach(Prenotazione prenotazione in Model)
                 {
                         <tr class="table-values">
+<<<<<<< Updated upstream
                             <th>@prenotazione.Libro.Titolo</th>
                             <th>@prenotazione.Libro.Autore</th>
                             <th>@prenotazione.Libro.ISBN</th>
                             <th>@prenotazione.DDI.ToString("yyyy-MM-dd HH:mm")</th>
                             <th>@prenotazione.DDF.ToString("yyyy-MM-dd HH:mm")</th>
+=======
+                            <th>@((prenotazione.Libro??new Libro()).Titolo)</th>
+                            <th>@((prenotazione.Libro ?? new Libro()).Autore)</th>
+                            <th>@((prenotazione.Libro ?? new Libro()).ISBN)</th>
+                            <th>@(prenotazione.DDI.ToString("D"))</th>
+                            <th>@(prenotazione.DDF.ToString("D"))</th>
+>>>>>>> Stashed changes
                             <th>
                                     <form onsubmit="RimuoviPrenotazione(@prenotazione.Id)">
                                 <input value="@prenotazione.Id" name="id" hidden readonly/>

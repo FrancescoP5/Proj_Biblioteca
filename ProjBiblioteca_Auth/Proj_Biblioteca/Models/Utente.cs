@@ -5,13 +5,7 @@ namespace Proj_Biblioteca.Models
 {
     public class Utente : Entity
     {
-        [Required]
-        public string Nome { get; set; }
-        [Required]
-        public string Email { get; set; }
-        [Required]
-        public string Ruolo { get; set; }
-
+        [DataType(DataType.DateTime)]
         public DateTime DDR { get; set; }
 
     }
