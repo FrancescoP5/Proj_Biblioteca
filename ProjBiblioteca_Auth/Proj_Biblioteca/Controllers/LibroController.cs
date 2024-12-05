@@ -23,6 +23,7 @@ namespace Proj_Biblioteca.Controllers
             return View(result!.Value);
         }
 
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Modifica(int id)
         {
             ObjectResult? result = await FindLibro(id) as ObjectResult;
@@ -33,12 +34,7 @@ namespace Proj_Biblioteca.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AggiungiLibro()
         {
-            Utente? UtenteLoggato = await GetUser("Libro/AggiungiLibro");
-            if (UtenteLoggato!= null && UtenteLoggato.Ruolo == "Admin")
-                return await Task.Run(() => View());
-
-            else
-                return Unauthorized();
+            return await Task.Run(() => View());
         }
 
         // ~/Libro/GetLibri
@@ -46,6 +42,7 @@ namespace Proj_Biblioteca.Controllers
          * Ritorna tutti i libri
          */
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> GetLibri()
         {
             return Ok(await _libreriaManager.Libri().Elenco());
@@ -55,8 +52,8 @@ namespace Proj_Biblioteca.Controllers
         /*
          * Ritorna un libro attraverso l'id
          */
-
         [HttpGet]
+        [AllowAnonymous]
         public async Task<IActionResult> FindLibro(int id)
         {
             Libro? libro = await _libreriaManager.Libri().FindLibro(id);
@@ -73,7 +70,8 @@ namespace Proj_Biblioteca.Controllers
          * I parametri del libro vengono passati attraverso un form
          */
         [HttpPost]
-        public async Task<IActionResult> Aggiungi(Libro Libro)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Aggiungi([Bind("Titolo,Autore,PrenotazioneMax,ISBN,Disponibilita")] Libro libro)
         {
             if (ModelState.IsValid && await _libreriaManager.Libri().Aggiungi(libro))
             {
@@ -86,6 +84,7 @@ namespace Proj_Biblioteca.Controllers
 
             return RedirectToAction("Elenco", "Libro");
 
+            return RedirectToAction("AggiungiLibro", "Libro");
         }
 
 
@@ -96,7 +95,8 @@ namespace Proj_Biblioteca.Controllers
          * I parametri del libro vengono passati attraverso un form
          */
         [HttpPost]
-        public async Task<IActionResult> Aggiorna(Libro Libro)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Aggiorna([Bind("ID,Titolo,Autore,PrenotazioneMax,ISBN,Disponibilita")] Libro libro)
         {
             if (ModelState.IsValid && await _libreriaManager.Libri().Aggiorna(libro))
             {
@@ -130,5 +130,7 @@ namespace Proj_Biblioteca.Controllers
             _logger.LogInformation($"Libro ID: {id} Rimozione fallita alle ore {DateTime.Now:HH:mm:ss}");
             return RedirectToAction("Modifica", "Libro", new { id = id });
         }
+
     }
 }
+

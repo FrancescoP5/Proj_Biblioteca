@@ -23,7 +23,8 @@ public class PrenotazioniController(ILogger<BaseController> logger, ILibreriaMan
      * Ritorna tutte le prenotazioni di tutti gli utenti in forma IEnumerable<Prenotazioni>
      */
     [HttpGet]
-    public async Task<IActionResult> ElencoPrenotazioni(int id)
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> ElencoPrenotazioni()
     {
         return Ok(await _libreriaManager.Prenotazioni().ElencoPrenotazioni());
     }
@@ -52,6 +53,7 @@ public class PrenotazioniController(ILogger<BaseController> logger, ILibreriaMan
      * Rimuove la prenotazione selezionata attraverso all'id
      */
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> RimuoviPrenotazione(int id)
     {
         UtenteViewModel? UtenteLoggato = await _libreriaManager.Utenti().GetLoggedUser(User);
@@ -78,7 +80,8 @@ public class PrenotazioniController(ILogger<BaseController> logger, ILibreriaMan
      * Controlla se l'utente ha meno di 3 prenotazioni o non ha già prenotato lo stesso libro
      */
     [HttpPost]
-    public async Task<IActionResult> AggiungiPrenotazione(int idLibro, string inizio, string fine)
+    [Authorize]
+    public async Task<IActionResult> AggiungiPrenotazione(int? idLibro, string inizio, string fine)
     {
         UtenteViewModel? UtenteLoggato = await _libreriaManager.Utenti().GetLoggedUser(User);
 
@@ -112,3 +115,4 @@ public class PrenotazioniController(ILogger<BaseController> logger, ILibreriaMan
         }
     }
 }
+

@@ -35,7 +35,8 @@ namespace Proj_Biblioteca.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> CambiaRuolo(int id, string ruolo)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CambiaRuolo(string id, string ruolo)
         {
             if (await _libreriaManager.Utenti().CambiaRuolo(id, ruolo))
                 return Ok();
@@ -45,6 +46,7 @@ namespace Proj_Biblioteca.Controllers
 
 
         [HttpGet]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> ListaUtenti(string email)
         {
             List<UtenteViewModel> utenti = await _libreriaManager.Utenti().ListaUtenti(email);
@@ -62,9 +64,10 @@ namespace Proj_Biblioteca.Controllers
          * controlla email e password e fa loggare un utente
          */
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AllowAnonymous]
         public async Task<IActionResult> Login(string email, string password)
         {
-
             _logger.LogInformation($"Tentativo di accesso alle ore {DateTime.Now:HH:mm:ss}");
 
             TempData["Messaggio"] = await _libreriaManager.Utenti().Login(email, password);
@@ -77,6 +80,8 @@ namespace Proj_Biblioteca.Controllers
          * Controlla nome, email e password inseriti e crea un account
          */
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [AllowAnonymous]
         public async Task<IActionResult> Registrazione(string nome, string email, string password)
         {
             TempData["Messaggio"] = await _libreriaManager.Utenti().Registrazione(nome, email, password);
@@ -88,6 +93,8 @@ namespace Proj_Biblioteca.Controllers
          * Disconnette l'utente loggato
          */
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> Disconnect()
         {
             _logger.LogInformation($"Utente disconnesso alle ore {DateTime.Now:HH:mm:ss}");
@@ -104,6 +111,8 @@ namespace Proj_Biblioteca.Controllers
          * e resetta tutte le prenotazioni
          */
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
         public async Task<IActionResult> Delete()
         {
             UtenteViewModel? UtenteLoggato = await _libreriaManager.Utenti().GetLoggedUser(User);

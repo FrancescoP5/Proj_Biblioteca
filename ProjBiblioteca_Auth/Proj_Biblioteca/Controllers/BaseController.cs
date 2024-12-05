@@ -15,7 +15,6 @@ namespace Proj_Biblioteca.Controllers
                 ILibreriaManager libreriaManager
             )
         {
-            _contextAccessor = contextAccessor;
             _logger = logger;
             _libreriaManager = libreriaManager;
         }

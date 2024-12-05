@@ -10,17 +10,31 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 builder.Services.AddRazorPages();
 
+builder.Services.AddDbContext<LibreriaContext>(options =>
+  options.UseSqlServer(builder.Configuration.GetConnectionString("LibreriaContext")));
+
+
+builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+builder.Services.AddIdentity<Utente,Role>().AddEntityFrameworkStores<LibreriaContext>();
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = true;
+    options.User.RequireUniqueEmail = true;
+});
+builder.Services.Configure<SecurityStampValidatorOptions>(options => { 
+    options.ValidationInterval = TimeSpan.FromSeconds(1);
+});
+
+builder.Services.AddRazorPages();
+
 builder.Services.AddDistributedMemoryCache();
 
-builder.Services.AddSession(options =>
+builder.Services.AddAntiforgery(options =>
 {
-    options.Cookie.Name = "LoginSession";
-    options.IdleTimeout = TimeSpan.FromMinutes(10);
     options.Cookie.HttpOnly = true;
-    options.Cookie.SameSite = SameSiteMode.None;
+    options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-    options.Cookie.IsEssential = true;
-    options.Cookie.MaxAge = TimeSpan.FromMinutes(10);
 });
 
 builder.Services.AddScoped<IRepoUtenti, RepoUtenti>();
@@ -50,8 +64,21 @@ if (!app.Environment.IsDevelopment())
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
+else
+{
+    app.UseDeveloperExceptionPage();
+    app.UseMigrationsEndPoint();
+}
+
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+
+    var context = services.GetRequiredService<LibreriaContext>();
+    context.Database.EnsureCreated();
 
 
+    var UserManager = services.GetRequiredService<UserManager<Utente>>();
 
     var UserManager = services.GetRequiredService<UserManager<Utente>>();
     var SignInManager = services.GetRequiredService<SignInManager<Utente>>();
@@ -67,11 +94,8 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseSession();
-
-Database database = Database.GetInstance();
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Libro}/{action=Elenco}/{id?}");
 
