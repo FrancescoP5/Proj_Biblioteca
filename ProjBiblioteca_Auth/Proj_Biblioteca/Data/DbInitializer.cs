@@ -56,7 +56,7 @@ namespace Proj_Biblioteca.Data
 
                 Utente[] admins =
                 [
-                    new Utente {Id=UserIDs["AdminUser"], UserName="Admin", Email = "Admin@Admin.com", PasswordHash=Encryption.Encrypt("Admin"), SecurityStamp= Guid.NewGuid().ToString()}
+                    new Utente {Id=UserIDs["AdminUser"], UserName="Admin", Email = "Admin@Admin.com", PasswordHash="Admin", SecurityStamp= Guid.NewGuid().ToString()}
 
                 ];
 
@@ -65,6 +65,7 @@ namespace Proj_Biblioteca.Data
 
                 foreach (Utente admin in admins)
                 {
+                    admin.PasswordHash = Encryption.HashPassword(admin.PasswordHash??"Admin", admin);
                     userManager.CreateAsync(admin).Wait();
                 }
 

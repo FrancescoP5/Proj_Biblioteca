@@ -17,15 +17,10 @@ namespace Proj_Biblioteca.DAL
         Task<int> Save();
     }
 
-    public class RepoPrenotazioni : IRepoPrenotazioni, IDisposable
+    public class RepoPrenotazioni(LibreriaContext libreriaContext) : IRepoPrenotazioni, IDisposable
     {
 
-        private readonly LibreriaContext libreriaContext;
-
-        public RepoPrenotazioni(LibreriaContext libreriaContext)
-        {
-            this.libreriaContext = libreriaContext;
-        }
+        private readonly LibreriaContext libreriaContext = libreriaContext;
 
         public async Task<IEnumerable<Prenotazione?>> GetPrenotazioni()
         {
@@ -40,7 +35,7 @@ namespace Proj_Biblioteca.DAL
                 Console.WriteLine(ex.ToString());
                 return Enumerable.Empty<Prenotazione?>();
             }
-        }        
+        }
         public async Task<IEnumerable<Prenotazione?>> GetPrenotazioni(string idUtente)
         {
             try
@@ -96,15 +91,15 @@ namespace Proj_Biblioteca.DAL
             if (prenotazione == null)
                 return false;
 
-            Libro? libro = await libreriaContext.Libri.AsNoTracking().FirstOrDefaultAsync(l=>l.ID == prenotazione.LibroID);
+            Libro? libro = await libreriaContext.Libri.AsNoTracking().FirstOrDefaultAsync(l => l.ID == prenotazione.LibroID);
 
             if (libro == null)
                 return false;
 
             if (
-                prenotazione.DDI.AddDays(1) >= DateTime.Now && 
-                prenotazione.DDI <= prenotazione.DDF && 
-                libro.Disponibilita > 0 && 
+                prenotazione.DDI.AddDays(1) >= DateTime.UtcNow &&
+                prenotazione.DDI <= prenotazione.DDF &&
+                libro.Disponibilita > 0 &&
                 prenotazione.DDF <= prenotazione.DDI.AddDays(libro.PrenotazioneMax + 1)
                 )
             {
@@ -131,7 +126,7 @@ namespace Proj_Biblioteca.DAL
                 return false;
 
             if (
-                prenotazione.DDI.AddDays(1) >= DateTime.Now &&
+                prenotazione.DDI.AddDays(1) >= DateTime.UtcNow &&
                 prenotazione.DDI <= prenotazione.DDF &&
                 prenotazione.Libro.Disponibilita > 0 &&
                 prenotazione.DDF <= prenotazione.DDI.AddDays(prenotazione.Libro.PrenotazioneMax + 1)
@@ -171,13 +166,16 @@ namespace Proj_Biblioteca.DAL
 
         protected virtual void Dispose(bool disposing)
         {
+            var success = false;
             if (!this.disposed)
             {
                 if (disposing)
                 {
-                    libreriaContext.DisposeAsync();
+                    ValueTask valueTask = libreriaContext.DisposeAsync();
+                    success = valueTask.IsCompletedSuccessfully;
                 }
             }
+            if(success)
             this.disposed = true;
         }
 

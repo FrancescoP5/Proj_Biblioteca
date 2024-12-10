@@ -5,14 +5,8 @@ using Proj_Biblioteca.Models;
 
 namespace Proj_Biblioteca.Data
 {
-    public class LibreriaContext : IdentityDbContext<Utente, Role, string>
+    public class LibreriaContext(DbContextOptions<LibreriaContext> options) : IdentityDbContext<Utente, Role, string>(options)
     {
-
-        public LibreriaContext(DbContextOptions<LibreriaContext> options) : base(options) 
-        { 
-
-        }
-
         public DbSet<Libro> Libri { get; set; }
 
 

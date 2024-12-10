@@ -16,13 +16,14 @@ builder.Services.AddDbContext<LibreriaContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddIdentity<Utente,Role>().AddEntityFrameworkStores<LibreriaContext>();
+builder.Services.AddIdentity<Utente, Role>().AddEntityFrameworkStores<LibreriaContext>();
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
     options.User.RequireUniqueEmail = true;
 });
-builder.Services.Configure<SecurityStampValidatorOptions>(options => { 
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+{
     options.ValidationInterval = TimeSpan.FromSeconds(1);
 });
 
@@ -47,7 +48,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
- 
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -73,7 +74,7 @@ using (var scope = app.Services.CreateScope())
     var SignInManager = services.GetRequiredService<SignInManager<Utente>>();
     var RoleManager = services.GetRequiredService<RoleManager<Role>>();
 
-    DbInitializer.Initialize(context,UserManager);
+    DbInitializer.Initialize(context, UserManager);
 }
 
 

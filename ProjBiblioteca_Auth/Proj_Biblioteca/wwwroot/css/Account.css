@@ -9,11 +9,12 @@
     display: flex;
     flex-direction:column;
     align-items:center;
-    width: 200px;
-    height: 200px;
+    min-width: 200px;
+    min-height: 200px;
     padding:20px;
     box-shadow: 0 0 10px black;
     gap:10px;
+    border-radius:10px;
 }
 
 a{
@@ -52,7 +53,29 @@ a:hover{
         word-break:break-word;
     }
 
+.FormAccesso button, .FormRegistrazione button{
+    background-color:black;
+    color:white;
+    padding:5px;
+    border-radius:3px;
+    margin-top:20px;
+    margin-bottom:10px;
+    border:none;
+    width:80%;
+}
 
+.FormAccesso label, .FormRegistrazione label{
+    font-size:14px;
+    margin-top:10px;
+    margin-bottom:0;
+}
+
+.FormAccesso input, .FormRegistrazione input{
+    background-color:gainsboro;
+    border:1px solid #808080;
+    border-radius:3px;
+    margin:0;
+}
 
 .table-columns{
     font-weight:bold;

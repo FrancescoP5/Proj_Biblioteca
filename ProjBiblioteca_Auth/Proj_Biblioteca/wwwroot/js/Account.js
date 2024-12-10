@@ -14,6 +14,16 @@ function FormLogin() {
     registrationForm.classList.add("hidden")
 }
 
+$(window).on('load', function () {
+    $('.toLocalDate').each(function () {
+        var utcDate = $(this).data('utcdate');
+
+        var dateValues = utcDate.split("/");
+
+        var localDate = new Date(dateValues[2] + '-' + dateValues[1] + '-' + dateValues[0]);
+        $(this).html(localDate.toLocaleDateString());
+    });
+});
 
 $('.RimuoviPrenotazione').click(function () {
     var form = $(this).parent();
@@ -26,7 +36,6 @@ $('.RimuoviPrenotazione').click(function () {
         }
     });
 });
-
 
 
 

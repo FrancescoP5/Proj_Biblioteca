@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 using Proj_Biblioteca.Utils;
-using System.Net.Mail;
-using System.Text.RegularExpressions;
 
 namespace Proj_Biblioteca.DAL
 {
@@ -31,21 +29,12 @@ namespace Proj_Biblioteca.DAL
         Task<int> Save();
     }
 
-    public class RepoUtenti : IRepoUtenti, IDisposable
+    public class RepoUtenti(LibreriaContext libreriaContext, SignInManager<Utente> signInManager, UserManager<Utente> userManager) : IRepoUtenti, IDisposable
     {
 
-        private readonly LibreriaContext libreriaContext;
-        private readonly SignInManager<Utente> signInManager;
-        private readonly UserManager<Utente> userManager;
-        private readonly RoleManager<Role> roleManager;
-
-        public RepoUtenti(LibreriaContext libreriaContext, SignInManager<Utente> signInManager, UserManager<Utente> userManager, RoleManager<Role> roleManager)
-        {
-            this.libreriaContext = libreriaContext;
-            this.signInManager = signInManager;
-            this.userManager = userManager;
-            this.roleManager = roleManager;
-        }
+        private readonly LibreriaContext libreriaContext = libreriaContext;
+        private readonly SignInManager<Utente> signInManager = signInManager;
+        private readonly UserManager<Utente> userManager = userManager;
 
         public async Task<IEnumerable<Utente?>> GetUtenti()
         {
@@ -90,7 +79,7 @@ namespace Proj_Biblioteca.DAL
         {
             try
             {
-                return await libreriaContext.Roles.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id); 
+                return await libreriaContext.Roles.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
             }
             catch (Exception ex)
             {
@@ -106,7 +95,7 @@ namespace Proj_Biblioteca.DAL
             Utente? utente = await libreriaContext.FindAsync<Utente>(id);
             if (oldRole != ruolo)
             {
-                if(utente == null)
+                if (utente == null)
                     return false;
 
                 try
@@ -114,7 +103,7 @@ namespace Proj_Biblioteca.DAL
                     await userManager.RemoveFromRoleAsync(utente, oldRole ?? "Utente");
                     await userManager.AddToRoleAsync(utente, ruolo);
                     await userManager.UpdateSecurityStampAsync(utente);
-                    
+
                     return true;
                 }
                 catch (Exception ex)
@@ -130,30 +119,33 @@ namespace Proj_Biblioteca.DAL
         {
             try
             {
-                return await libreriaContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email && u.PasswordHash == passwordHash);
+                Utente? utente = await libreriaContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email);
+                if (utente == null) return null;
+
+                var verificaPassword = Encryption.VerifyPassword(passwordHash, utente);
+
+                if(verificaPassword == "Verificato") return utente;
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
-                return null;
+            return null;
         }
 
         public async Task<bool> InsertByCredentials(string nome, string email, string password)
         {
-            string passwordRGX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,10}$"; //Regex per la validazione di una password
-            if (MailAddress.TryCreate(email, out _) && Regex.Match(password, passwordRGX).Success)
+            Utente utente = new() { Id = Guid.NewGuid().ToString(), UserName = nome, Email = email, PasswordHash = password, DDR = DateTime.UtcNow };
+            utente.PasswordHash = Encryption.HashPassword(password, utente);
+
+            IdentityResult registerResult = await userManager.CreateAsync(utente);
+
+            if (registerResult.Succeeded)
             {
-                Utente utente = new() { Id = Guid.NewGuid().ToString(), UserName = nome, Email = email, PasswordHash = Encryption.Encrypt(password), DDR = DateTime.Now };
-
-                IdentityResult registerResult = await userManager.CreateAsync(utente);
-
-                if (registerResult.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(utente, "Utente");
-                    return true;
-                }
+                await userManager.AddToRoleAsync(utente, "Utente");
+                return true;
             }
+
             return false;
         }
 
@@ -292,14 +284,17 @@ namespace Proj_Biblioteca.DAL
         private bool disposed = false;
         protected virtual void Dispose(bool disposing)
         {
+            var success = false;
             if (!this.disposed)
             {
                 if (disposing)
                 {
-                    libreriaContext.DisposeAsync();
+                    ValueTask valueTask = libreriaContext.DisposeAsync();
+                    success = valueTask.IsCompletedSuccessfully;
                 }
             }
-            this.disposed = true;
+            if (success)
+                this.disposed = true;
         }
 
         public void Dispose()

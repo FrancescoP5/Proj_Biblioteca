@@ -1,11 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Proj_Biblioteca.Models;
-using Proj_Biblioteca.ViewModels;
-using Microsoft.AspNetCore.Authorization;
 using Proj_Biblioteca.Service;
+using Proj_Biblioteca.ViewModels;
 
 namespace Proj_Biblioteca.Controllers
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254", Justification = "<In sospeso>")]
     public class LibroController(ILogger<BaseController> logger, ILibreriaManager libreriaManager) : BaseController(logger, libreriaManager)
     {
         [AllowAnonymous]
@@ -19,7 +20,7 @@ namespace Proj_Biblioteca.Controllers
                 ViewData.Add("Utente", UtenteLoggato);
 
             ObjectResult? result = await GetLibri() as ObjectResult;
-            
+
             return View(result!.Value);
         }
 
@@ -57,7 +58,7 @@ namespace Proj_Biblioteca.Controllers
         public async Task<IActionResult> FindLibro(int id)
         {
             Libro? libro = await _libreriaManager.Libri().FindLibro(id);
-            if(libro == null)
+            if (libro == null)
                 return NotFound();
 
             return Ok(libro);
@@ -75,12 +76,12 @@ namespace Proj_Biblioteca.Controllers
         {
             if (ModelState.IsValid && await _libreriaManager.Libri().Aggiungi(libro))
             {
-                _logger.LogInformation($"Libro: {libro.Titolo} Aggiunto alle ore {DateTime.Now:HH:mm:ss}");
+                _logger.LogInformation($"Libro: {libro.Titolo} Aggiunto alle ore {DateTime.UtcNow:HH:mm:ss}");
 
                 return RedirectToAction("Elenco", "Libro");
             }
 
-            _logger.LogInformation($"Libro: {libro.Titolo} Aggiunta fallita dati invalidi alle ore {DateTime.Now:HH:mm:ss}");
+            _logger.LogInformation($"Libro: {libro.Titolo} Aggiunta fallita dati invalidi alle ore {DateTime.UtcNow:HH:mm:ss}");
 
             return RedirectToAction("AggiungiLibro", "Libro");
 
@@ -99,12 +100,12 @@ namespace Proj_Biblioteca.Controllers
         {
             if (ModelState.IsValid && await _libreriaManager.Libri().Aggiorna(libro))
             {
-                _logger.LogInformation($"Libro: {libro.Titolo} Aggiornato alle ore {DateTime.Now:HH:mm:ss}");
+                _logger.LogInformation($"Libro: {libro.Titolo} Aggiornato alle ore {DateTime.UtcNow:HH:mm:ss}");
 
                 return RedirectToAction("Elenco", "Libro");
             }
 
-            _logger.LogInformation($"Libro: {libro.Titolo} Aggiornamento fallito alle ore {DateTime.Now:HH:mm:ss}");
+            _logger.LogInformation($"Libro: {libro.Titolo} Aggiornamento fallito alle ore {DateTime.UtcNow:HH:mm:ss}");
 
             return RedirectToAction("Modifica", "Libro");
         }
@@ -122,12 +123,12 @@ namespace Proj_Biblioteca.Controllers
 
             if (await _libreriaManager.Libri().Elimina(id))
             {
-                _logger.LogInformation($"Libro ID: {id} Rimosso alle ore {DateTime.Now:HH:mm:ss}");
+                _logger.LogInformation($"Libro ID: {id} Rimosso alle ore {DateTime.UtcNow:HH:mm:ss}");
                 return RedirectToAction("Elenco", "Libro");
             }
 
-            _logger.LogInformation($"Libro ID: {id} Rimozione fallita alle ore {DateTime.Now:HH:mm:ss}");
-            return RedirectToAction("Modifica", "Libro", new { id = id });
+            _logger.LogInformation($"Libro ID: {id} Rimozione fallita alle ore {DateTime.UtcNow:HH:mm:ss}");
+            return RedirectToAction("Modifica", "Libro", new { id });
         }
 
     }

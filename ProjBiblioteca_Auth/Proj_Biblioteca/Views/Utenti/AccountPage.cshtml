@@ -56,13 +56,14 @@
                         @foreach (Prenotazione prenotazione in Model)
                         {
 
-                                
+                            string utcDateDDI = prenotazione.DDI.ToString("dd/MM/yyyy");
+                            string utcDateDDF = prenotazione.DDF.ToString("dd/MM/yyyy");
                             <tr class="table-values">
                                 <th>@((prenotazione?? new Prenotazione()).ID)</th>
                                 <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).Titolo)</th>
                                 <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).ISBN)</th>
-                                <th>@((prenotazione ?? new Prenotazione()).DDI.ToString("yyyy-MM-dd HH:mm"))</th>
-                                <th>@((prenotazione ?? new Prenotazione()).DDF.ToString("yyyy-MM-dd HH:mm"))</th>
+                                <th class="toLocalDate" data-utcdate="@(utcDateDDI)">@(utcDateDDI)UTC</th>
+                                <th class="toLocalDate" data-utcdate="@(utcDateDDF)">@(utcDateDDF)UTC</th>
                                 <th>@(((prenotazione ?? new Prenotazione()).UtenteViewModel ?? new UtenteViewModel() { Email = "NULL", Nome = "NULL", Ruolo = "NULL" }).Email)</th>
                                 <th>
                                     <form onsubmit="return false">
@@ -81,35 +82,36 @@
             }
             else
             {
-                
-            <div class="prenotazioni">
-                <table class="table">
-                    <tr class="table-columns">
-                        <th>Titolo</th>
-                        <th>Autore</th>
-                        <th>ISBN</th>
-                        <th>Data di Prenotazione</th>
-                        <th>Data di Restituzione</th>
-                        <th>Elimina Prenotazione</th>
-                    </tr>
-                @foreach(Prenotazione prenotazione in Model)
-                {
-                        <tr class="table-values">
-                            <th>@((prenotazione.Libro??new Libro()).Titolo)</th>
-                            <th>@((prenotazione.Libro ?? new Libro()).Autore)</th>
-                            <th>@((prenotazione.Libro ?? new Libro()).ISBN)</th>
-                            <th>@(prenotazione.DDI.ToString("yyyy-MM-dd HH:mm"))</th>
-                            <th>@(prenotazione.DDF.ToString("yyyy-MM-dd HH:mm"))</th>
-                            <th>
-                                    <form onsubmit="return false">
-                                <input value="@(prenotazione.ID)" name="id" hidden readonly/>
-                                        <button class="RimuoviPrenotazione" type="submit">X</button>
-                                </form>
-                            </th>
+
+                <div class="prenotazioni">
+                    <table class="table">
+                        <tr class="table-columns">
+                            <th>Titolo</th>
+                            <th>Autore</th>
+                            <th>ISBN</th>
+                            <th>Data di Prenotazione</th>
+                            <th>Data di Restituzione</th>
+                            <th>Elimina Prenotazione</th>
                         </tr>
-                    
-                }
-                </table>
+                        @foreach (Prenotazione prenotazione in Model)
+                        {
+                            string utcDateDDI = prenotazione.DDI.ToString("dd/MM/yyyy");
+                            string utcDateDDF = prenotazione.DDF.ToString("dd/MM/yyyy");
+                            <tr class="table-values">
+                                <th>@((prenotazione.Libro ?? new Libro()).Titolo)</th>
+                                <th>@((prenotazione.Libro ?? new Libro()).Autore)</th>
+                                <th>@((prenotazione.Libro ?? new Libro()).ISBN)</th>
+                                <th class="toLocalDate" data-utcdate="@(utcDateDDI)">@(utcDateDDI)UTC</th>
+                                <th class="toLocalDate" data-utcdate="@(utcDateDDF)">@(utcDateDDF)UTC</th>
+                                <th>
+                                    <form onsubmit="return false">
+                                        <input value="@(prenotazione.ID)" name="id" hidden readonly/>
+                                        <button class="RimuoviPrenotazione" type="submit">X</button>
+                                    </form>
+                                </th>
+                            </tr>
+                        }
+                    </table>
             </div>
             }
         }
@@ -120,7 +122,8 @@
     }
     else // Login/Registrazione quando non c'è account loggato
     {
-        <div class="Accesso" id="FormAccesso">
+        string classeLogin = (bool)(ViewData["IsRegistrazione"] ?? false) ? "Accesso hidden" : "Accesso";
+        <div class="@(classeLogin)" id="FormAccesso">
             <h2 class="Titolo">Accesso</h2>
             <br />
 
@@ -143,7 +146,8 @@
                 <span>Non hai un account? <a onclick="FormRegistrazione()">Registrati.</a></span>
         </div>
 
-        <div class="Registrazione hidden" id="FormRegistrazione" >
+        string classeRegistrazione = (bool)(ViewData["IsRegistrazione"] ?? false) ? "Registrazione" : "Registrazione hidden";
+        <div class="@(classeRegistrazione)" id="FormRegistrazione">
             <h2 class="Titolo">Registrazione</h2>
             <br />
 
@@ -155,10 +159,18 @@
                 <input type="email" id="emailReg" name="email" placeholder="example@example.com" required />
                 <label>Password:</label>
                 <input type="password" id="passwordReg" name="password" placeholder="password" required />
+                <label>Conferma Password:</label>
+                <input type="password" id="passwordConfermaReg" name="confermaPassword" placeholder="password" required />
                 <button type="submit">Registrati</button>
             </form>
 
             <br />
+            @if (ViewData["Messaggio"] != null)
+            {
+                <span class="erroreLogin">@((ViewData["Messaggio"] ?? "Null").ToString())</span>
+
+                <br />
+            }
 
 
             <span>Hai un account? <a onclick="FormLogin()">Accedi.</a></span>

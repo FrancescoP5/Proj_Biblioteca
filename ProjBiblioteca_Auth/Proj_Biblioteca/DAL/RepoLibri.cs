@@ -16,15 +16,10 @@ namespace Proj_Biblioteca.DAL
         Task<int> Save();
     }
 
-    public class RepoLibri : IRepoLibri, IDisposable
+    public class RepoLibri(LibreriaContext libreriaContext) : IRepoLibri, IDisposable
     {
 
-        private readonly LibreriaContext libreriaContext;
-
-        public RepoLibri(LibreriaContext libreriaContext)
-        {
-            this.libreriaContext = libreriaContext;
-        }
+        private readonly LibreriaContext libreriaContext = libreriaContext;
 
         public async Task<IEnumerable<Libro?>> GetLibri()
         {
@@ -54,14 +49,14 @@ namespace Proj_Biblioteca.DAL
 
         public async Task<bool> Delete(Libro libro)
         {
-            if (libro == null) 
+            if (libro == null)
                 return false;
 
             try
             {
                 libreriaContext.Libri.Remove(libro);
 
-                if (await Save()>0)
+                if (await Save() > 0)
                     return true;
 
                 return false;
@@ -136,13 +131,16 @@ namespace Proj_Biblioteca.DAL
 
         protected virtual void Dispose(bool disposing)
         {
+            var success = false;
             if (!this.disposed)
             {
                 if (disposing)
                 {
-                    libreriaContext.DisposeAsync();
+                    ValueTask valueTask = libreriaContext.DisposeAsync();
+                    success = valueTask.IsCompletedSuccessfully;
                 }
             }
+            if(success)
             this.disposed = true;
         }
 

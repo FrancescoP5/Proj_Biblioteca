@@ -36,9 +36,11 @@
            <div class="inputs">
             <form method="post"onsubmit="return false">
                     <input type="text" name="idLibro" value="@Model.ID" required hidden />
+                    <input type="number" id="timeOffset" name="timeOffset" value="" required hidden />
+                    <input type="number" id="clientTime" name="clientTime" value="" required hidden />
                 <label>Data Prenotazione</label>
                 <br />
-                    <label>Inizio</label><input class="date" id="dataInizio" name="inizio" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" onchange="CambioData(@Model.PrenotazioneMax)" required/>
+                    <label>Inizio</label><input class="date" id="dataInizio" name="inizio" type="date" data-utcdate="@(DateTime.UtcNow.ToString("yyyy-MM-dd"))" min="" onchange="CambioData(@Model.PrenotazioneMax)" required />
                 <br />
                     <label>Fine  </label><input class="date" id="dataFine" name="fine" type="date" min="" max="" required/>
                  <br />

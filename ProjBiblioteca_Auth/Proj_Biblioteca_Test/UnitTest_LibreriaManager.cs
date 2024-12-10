@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Newtonsoft.Json;
 using Proj_Biblioteca.DAL;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
@@ -15,108 +16,172 @@ namespace Proj_Biblioteca_Test
         internal static readonly IRepoUtenti repoUtenti = new FakeRepoUtenti();
         internal static readonly IRepoPrenotazioni repoPrenotazioni = new FakeRepoPrenotazioni();
 
-        public static readonly LibreriaManager manager = new(repoPrenotazioni,repoLibri,repoUtenti);
+        public static readonly LibreriaManager manager = new(repoPrenotazioni, repoLibri, repoUtenti);
     }
 
     [TestClass]
     public class Test_Servizio_Utenti
     {
-        LibreriaManager libreriaManager = Manager.manager;
+        readonly LibreriaManager libreriaManager = Manager.manager;
 
-        [TestMethod]    
-        public void Test_Servizio_Login()
+        [TestMethod]
+        public void Test_Login()
         {
-            var message = libreriaManager.Utenti().Login("user@example.com", "Esempio").Result;
+            var message = libreriaManager.Utenti().Login(new LoginViewModel() { Email = "user@example.com", Password = "Esempio" }).Result;
 
             Assert.IsTrue(message == "Successo! Verrai reindirizzato a breve..", message);
         }
 
         [TestMethod]
-        public void Test_Servizio_Registrazione()
+        public void Test_Registrazione()
         {
-            Utente utente = new Utente() { UserName = "Esempio", Email="Esempio@gmail.com", PasswordHash = "Pippo50!"};
-            var message = libreriaManager.Utenti().Registrazione(utente.UserName,utente.Email,utente.PasswordHash).Result;
+            Utente utente = new() { UserName = "Esempio", Email = "Esempio@gmail.com", PasswordHash = "Pippo50!" };
+            var message = libreriaManager.Utenti().Registrazione(new RegistrazioneViewModel() { Nome = utente.UserName, Email = utente.Email, Password = utente.PasswordHash, ConfermaPassword = utente.PasswordHash }).Result;
             Assert.IsTrue(message == "Successo! Verrai reindirizzato a breve..", message);
         }
 
         [TestMethod]
-        public void Test_Servizio_CambioRuolo()
+        public void Test_CambioRuolo()
         {
             Assert.IsTrue(libreriaManager.Utenti().CambiaRuolo("user123", "Utenti").Result);
         }
 
         [TestMethod]
-        public void Test_Servizio_Logout()
+        public void Test_Logout()
         {
-           Assert.IsTrue(libreriaManager.Utenti().Disconnect().Result);
+            Assert.IsTrue(libreriaManager.Utenti().Disconnect().Result);
         }
 
         [TestMethod]
-        public void Test_Servizio_DeleteAccount()
+        public void Test_DeleteAccount()
         {
-            Utente utente = new Utente() {UserName = "Esempio", Email = "Esempio@gmail.com", PasswordHash = "Pippo50!" };
-            var message = libreriaManager.Utenti().Registrazione(utente.UserName, utente.Email, utente.PasswordHash).Result;
+            Utente utente = new() { UserName = "Esempio", Email = "Esempio@gmail.com", PasswordHash = "Pippo50!" };
+            var message = libreriaManager.Utenti().Registrazione(new RegistrazioneViewModel() { Nome = utente.UserName, Email = utente.Email, Password = utente.PasswordHash, ConfermaPassword = utente.PasswordHash }).Result;
             UtenteViewModel utenteVM = libreriaManager.Utenti().GetViewModels().Result.First(p => p.Email == utente.Email);
 
             Assert.IsTrue(libreriaManager.Utenti().Delete(utenteVM).Result);
             Assert.IsNull(libreriaManager.Utenti().GetViewModel("aaa").Result);
         }
     }
-    
+
 
     [TestClass]
     public class Test_Servizio_Libri
     {
-        LibreriaManager libreriaManager = Manager.manager;
+        readonly LibreriaManager libreriaManager = Manager.manager;
 
         [TestMethod]
-        public void A() { Assert.IsTrue(true); }
+        public void Test_Lettura()
+        {
+            var libri = libreriaManager.Libri().Elenco().Result;
+
+            Assert.IsNotNull(libri);
+            Assert.AreEqual(2, libri.Count());
+        }
+
+        [TestMethod]
+        public void Test_Scrittura()
+        {
+            var libro = new Libro() { Autore = "es", Disponibilita = 1, ID = 101, ISBN = 1, PrenotazioneMax = 1, Titolo = "es" };
+
+            Assert.IsTrue(libreriaManager.Libri().Aggiungi(libro).Result);
+
+            Assert.AreEqual(libro, libreriaManager.Libri().FindLibro(libro.ID).Result);
+        }
     }
 
     [TestClass]
     public class Test_Servizio_Prenotazioni
     {
-        LibreriaManager libreriaManager = Manager.manager;
-        [TestMethod]
-        public void A() { Assert.IsTrue(true); }
-    }
+        readonly LibreriaManager libreriaManager = Manager.manager;
 
+        [TestMethod]
+        public void Test_Lettura()
+        {
+            var prenotazioniJson = libreriaManager.Prenotazioni().GetPrenotazioni("user123").Result;
+            var prenotazioni = JsonConvert.DeserializeObject<IEnumerable<Prenotazione?>>(Encryption.Decrypt(prenotazioniJson));
+            Assert.IsNotNull(prenotazioni);
+            Assert.AreEqual(1, prenotazioni.Count());
+        }
+
+        [TestMethod]
+        public void Test_Scrittura()
+        {
+            var prenotazione = new Prenotazione() { ID = 101, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, IdUtente = "user123", LibroID = 2 };
+
+            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() {IdLibro = prenotazione.LibroID, IdUtente = prenotazione.IdUtente, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
+            Assert.AreEqual(CodiceStato.Ok, codice);
+        }
+
+        [TestMethod]
+        public void Test_Scrittura_LibroGiaPrenotato()
+        {
+            var prenotazione = new Prenotazione() { ID = 101, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, IdUtente = "user123", LibroID = 1 };
+            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() { IdLibro = prenotazione.LibroID, IdUtente = prenotazione.IdUtente, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
+            Assert.AreEqual(CodiceStato.Errore_Client, codice);
+        }
+
+        [TestMethod]
+        public void Test_Scrittura_DatiInsufficienti()
+        {
+            var prenotazione = new Prenotazione() { ID = 101, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, IdUtente = "user123", LibroID = 2 };
+            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() { IdLibro = null, IdUtente = prenotazione.IdUtente, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
+            Assert.AreEqual(CodiceStato.Dati_Insufficienti, codice);
+        }
+    }
 
     public class FakeRepoUtenti : IRepoUtenti
     {
-        private List<Utente> _utenti = new List<Utente>
+        public List<Utente> _utenti =
+        [
+            new Utente { Id = "user123", UserName = "John Doe", Email = "user@example.com" , PasswordHash="Esempio" }
+        ];
+        
+        public FakeRepoUtenti()
         {
-            new Utente { Id = "user123", UserName = "John Doe", Email = "user@example.com" , PasswordHash=Encryption.Encrypt("Esempio") }
-        };
+            foreach(var utente in _utenti)
+            {
+                utente.PasswordHash = Encryption.HashPassword(utente.PasswordHash??"", utente);
+            }
+        }
 
         public Task<Utente?> GetUtente(string id)
         {
             return Task.FromResult(_utenti.FirstOrDefault(u => u.Id == id));
         }
 
-        public Task<IEnumerable<Utente>> GetUtenti()
+        public Task<IEnumerable<Utente?>> GetUtenti()
         {
-            return Task.FromResult(_utenti as IEnumerable<Utente>);
+            return Task.FromResult(_utenti as IEnumerable<Utente?>);
         }
 
-        public Task<IdentityUserRole<string>> GetUserRole(string id)
+        public Task<IdentityUserRole<string>?> GetUserRole(string id)
         {
-            return Task.FromResult(new IdentityUserRole<string>{RoleId="utente"}); // Simuliamo che l'utente abbia sempre il ruolo di Admin
+            return Task.FromResult(new IdentityUserRole<string> { RoleId = "utente" } ?? null ); // Simuliamo che l'utente abbia sempre il ruolo di Admin
         }
 
         public Task<Role?> GetRuolo(string ruoloId)
         {
-            return Task.FromResult(new Role { Name = "Admin" });
+            return Task.FromResult(new Role { Name = "Admin" } ?? null);
         }
 
         public Task<Utente?> GetByCredentials(string email, string password)
         {
-            return Task.FromResult(_utenti.FirstOrDefault(u => u.Email == email && u.PasswordHash==password));
+
+            Utente? utente = _utenti.FirstOrDefault(u => u.Email == email);
+            if (utente == null) return Task.FromResult((Utente?)null);
+
+            var verifica = Encryption.VerifyPassword(password,utente);
+            if (verifica == "Verificato") return Task.FromResult((Utente?)utente);
+
+            return Task.FromResult((Utente?)null);
         }
 
         public Task<bool> InsertByCredentials(string nome, string email, string password)
         {
-            _utenti.Add(new Utente { Id = Guid.NewGuid().ToString(), UserName = nome, Email = email, PasswordHash=Encryption.Encrypt(password)});
+            Utente utente = new() { Id = Guid.NewGuid().ToString(), UserName = nome, Email = email, PasswordHash = password };
+            utente.PasswordHash = Encryption.HashPassword(password,utente);
+            _utenti.Add(utente);
             return Task.FromResult(true);
         }
 
@@ -130,8 +195,11 @@ namespace Proj_Biblioteca_Test
             return Task.FromResult(true); // Simuliamo sempre un logout con successo
         }
 
-        public Task<bool> Delete(Utente utente)
+        public Task<bool> Delete(Utente? utente)
         {
+            if (utente == null)
+                return Task.FromResult(false);
+
             return Task.FromResult(_utenti.Remove(utente));
         }
 
@@ -160,19 +228,21 @@ namespace Proj_Biblioteca_Test
 
         public void Dispose()
         {
+            GC.SuppressFinalize(this);
         }
     }
 
-    internal class FakeRepoLibri : IRepoLibri
+    public class FakeRepoLibri : IRepoLibri
     {
-        private List<Libro> _libri = new List<Libro>
-    {
-        new Libro { ID = 1, Titolo = "Libro di Test", Disponibilita = 5 }
-    };
+        public List<Libro> _libri =
+        [
+            new Libro { ID = 1, Titolo = "Libro di Test", Disponibilita = 5 },
+            new Libro { ID = 2, Titolo = "Libro di Test", Disponibilita = 5 }
+        ];
 
-        public Task<IEnumerable<Libro>> GetLibri()
+        public Task<IEnumerable<Libro?>> GetLibri()
         {
-            return Task.FromResult(_libri.AsEnumerable());
+            return Task.FromResult(_libri.AsEnumerable<Libro?>());
         }
 
         public Task<Libro?> GetLibro(int id)
@@ -211,22 +281,25 @@ namespace Proj_Biblioteca_Test
 
         public void Dispose()
         {
-            throw new NotImplementedException();
+            GC.SuppressFinalize(this);
         }
     }
 
     internal class FakeRepoPrenotazioni : IRepoPrenotazioni
     {
-        private List<Prenotazione> _prenotazioni = new List<Prenotazione>();
+        public List<Prenotazione> _prenotazioni =
+        [
+            new Prenotazione() {ID = 1, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, IdUtente= "user123", LibroID=1 }
+        ];
 
-        public Task<IEnumerable<Prenotazione>> GetPrenotazioni()
+        public Task<IEnumerable<Prenotazione?>> GetPrenotazioni()
         {
-            return Task.FromResult(_prenotazioni.AsEnumerable());
+            return Task.FromResult(_prenotazioni.AsEnumerable<Prenotazione?>());
         }
 
-        public Task<IEnumerable<Prenotazione>> GetPrenotazioni(string idUtente)
+        public Task<IEnumerable<Prenotazione?>> GetPrenotazioni(string idUtente)
         {
-            return Task.FromResult(_prenotazioni.Where(p => p.IdUtente == idUtente));
+            return Task.FromResult(_prenotazioni.Where(p => p.IdUtente == idUtente) as IEnumerable<Prenotazione?>);
         }
 
         public Task<Prenotazione?> GetPrenotazione(int id)

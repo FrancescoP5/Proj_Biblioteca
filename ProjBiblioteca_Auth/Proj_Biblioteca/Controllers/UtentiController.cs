@@ -1,11 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Proj_Biblioteca.ViewModels;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Proj_Biblioteca.Service;
+using Proj_Biblioteca.ViewModels;
 
 
 namespace Proj_Biblioteca.Controllers
 {
+
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254", Justification = "<In sospeso>")]
 
     public class UtentiController(ILogger<BaseController> logger, ILibreriaManager libreriaManager) : BaseController(logger, libreriaManager)
     {
@@ -22,6 +24,11 @@ namespace Proj_Biblioteca.Controllers
                 ViewData["Utente"] = UtenteLoggato;
             else
                 ViewData.Add("Utente", UtenteLoggato);
+
+            if (ViewData.ContainsKey("IsRegistrazione"))
+                ViewData["IsRegistrazione"] = TempData["IsRegistrazione"];
+            else
+                ViewData.Add("IsRegistrazione", TempData["IsRegistrazione"]);
 
             return View(await _libreriaManager.Utenti().PrenotazioniUtente(UtenteLoggato));
         }
@@ -64,12 +71,20 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AllowAnonymous]
-        public async Task<IActionResult> Login(string email, string password)
+        public async Task<IActionResult> Login([Bind]LoginViewModel loginView)
         {
-            _logger.LogInformation($"Tentativo di accesso alle ore {DateTime.Now:HH:mm:ss}");
+            _logger.LogInformation($"Tentativo di accesso alle ore {DateTime.UtcNow:HH:mm:ss}");
 
-            TempData["Messaggio"] = await _libreriaManager.Utenti().Login(email, password);
+            if (ModelState.IsValid)
+            {
+                TempData["Messaggio"] = await _libreriaManager.Utenti().Login(loginView);
+            }
+            else
+            {
+                TempData["Messaggio"] = "Errore nel login..";
+            }
 
+            TempData["IsRegistrazione"] = false;
             return RedirectToAction("AccountPage");
         }
 
@@ -80,9 +95,14 @@ namespace Proj_Biblioteca.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [AllowAnonymous]
-        public async Task<IActionResult> Registrazione(string nome, string email, string password)
+        public async Task<IActionResult> Registrazione([Bind]RegistrazioneViewModel registrazioneView)
         {
-            TempData["Messaggio"] = await _libreriaManager.Utenti().Registrazione(nome, email, password);
+            if (ModelState.IsValid)
+                TempData["Messaggio"] = await _libreriaManager.Utenti().Registrazione(registrazioneView);
+            else
+                TempData["Messaggio"] = "Errore nella registrazione..";
+
+            TempData["IsRegistrazione"] = true;
             return RedirectToAction("AccountPage");
         }
 
@@ -95,7 +115,7 @@ namespace Proj_Biblioteca.Controllers
         [Authorize]
         public async Task<IActionResult> Disconnect()
         {
-            _logger.LogInformation($"Utente disconnesso alle ore {DateTime.Now:HH:mm:ss}");
+            _logger.LogInformation($"Utente disconnesso alle ore {DateTime.UtcNow:HH:mm:ss}");
 
             await _libreriaManager.Utenti().Disconnect();
 
@@ -115,10 +135,10 @@ namespace Proj_Biblioteca.Controllers
         {
             UtenteViewModel? UtenteLoggato = await _libreriaManager.Utenti().GetLoggedUser(User);
 
-            if (UtenteLoggato!= null && await _libreriaManager.Utenti().Delete(UtenteLoggato))
-                _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Eliminazione riuscita alle ore {DateTime.Now:HH:mm:ss}");
+            if (UtenteLoggato != null && await _libreriaManager.Utenti().Delete(UtenteLoggato))
+                _logger.LogInformation($"Utente: {UtenteLoggato.Nome} Eliminazione riuscita alle ore {DateTime.UtcNow:HH:mm:ss}");
             else
-                _logger.LogInformation($"Errore, eliminazione fallita {DateTime.Now:HH:mm:ss}");
+                _logger.LogInformation($"Errore, eliminazione fallita {DateTime.UtcNow:HH:mm:ss}");
 
             return RedirectToAction("AccountPage");
         }
