@@ -1,14 +1,24 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.DAL;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 using Proj_Biblioteca.Service;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+
+builder.Services.AddRateLimiter(_ => _.AddFixedWindowLimiter(policyName:"fixed" ,options =>
+{
+    options.PermitLimit = 1;
+    options.Window = TimeSpan.FromSeconds(1);
+    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    options.QueueLimit = 1;
+}));
 
 builder.Services.AddDbContext<LibreriaContext>(options =>
   options.UseSqlServer(builder.Configuration.GetConnectionString("LibreriaContext")));
@@ -86,6 +96,8 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseRateLimiter();
 
 app.MapControllerRoute(name: "default", pattern: "{controller=Libro}/{action=Elenco}/{id?}");
 

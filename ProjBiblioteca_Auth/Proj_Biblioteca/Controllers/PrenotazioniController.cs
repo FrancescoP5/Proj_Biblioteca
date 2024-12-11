@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Proj_Biblioteca.Service;
 using Proj_Biblioteca.ViewModels;
 
 namespace Proj_Biblioteca.Controllers
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254", Justification = "<In sospeso>")]
+    [EnableRateLimiting("fixed")]
     public class PrenotazioniController(ILogger<BaseController> logger, ILibreriaManager libreriaManager) : BaseController(logger, libreriaManager)
     {
         public async Task<IActionResult> Prenota(int idLibro)

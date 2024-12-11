@@ -13,12 +13,17 @@ namespace Proj_Biblioteca.Models
         [DataType(DataType.DateTime)]
         public DateTime DDF { get; set; }
 
+        [Timestamp]
+        public byte[] Version { get; set; }
+
+
         [ForeignKey("Utente")]
         public string? IdUtente { get; set; }
         public int LibroID { get; set; }
 
         public Utente? Utente { private get; set; }
         public Libro? Libro { get; set; }
+
 
         [NotMapped]
         public UtenteViewModel? UtenteViewModel { get; set; }

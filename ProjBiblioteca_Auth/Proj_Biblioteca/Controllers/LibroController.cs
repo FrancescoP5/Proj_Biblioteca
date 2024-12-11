@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Proj_Biblioteca.Models;
 using Proj_Biblioteca.Service;
 using Proj_Biblioteca.ViewModels;
@@ -7,6 +8,7 @@ using Proj_Biblioteca.ViewModels;
 namespace Proj_Biblioteca.Controllers
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2254", Justification = "<In sospeso>")]
+    [EnableRateLimiting("fixed")]
     public class LibroController(ILogger<BaseController> logger, ILibreriaManager libreriaManager) : BaseController(logger, libreriaManager)
     {
         [AllowAnonymous]

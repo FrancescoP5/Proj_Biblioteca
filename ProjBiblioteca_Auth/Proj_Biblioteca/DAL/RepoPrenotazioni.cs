@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 
@@ -19,7 +20,7 @@ namespace Proj_Biblioteca.DAL
 
     public class RepoPrenotazioni(LibreriaContext libreriaContext) : IRepoPrenotazioni, IDisposable
     {
-
+        private static readonly object _semaforo = new object(); 
         private readonly LibreriaContext libreriaContext = libreriaContext;
 
         public async Task<IEnumerable<Prenotazione?>> GetPrenotazioni()
@@ -91,31 +92,38 @@ namespace Proj_Biblioteca.DAL
             if (prenotazione == null)
                 return false;
 
-            Libro? libro = await libreriaContext.Libri.AsNoTracking().FirstOrDefaultAsync(l => l.ID == prenotazione.LibroID);
-
-            if (libro == null)
-                return false;
-
-            if (
-                prenotazione.DDI.AddDays(1) >= DateTime.UtcNow &&
-                prenotazione.DDI <= prenotazione.DDF &&
-                libro.Disponibilita > 0 &&
-                prenotazione.DDF <= prenotazione.DDI.AddDays(libro.PrenotazioneMax + 1)
-                )
+            try
             {
-                try
-                {
-                    libreriaContext.Prenotazioni.Add(prenotazione);
+                Libro? libro = await libreriaContext.Libri.AsNoTracking().FirstOrDefaultAsync(l => l.ID == prenotazione.LibroID);
+                if (libro == null)
+                    return false;
 
-                    if (await Save() > 0)
-                        return true;
-                }
-                catch (Exception ex)
+                if (
+                    prenotazione.DDI.AddDays(1) >= DateTime.UtcNow &&  // Prenotazione futura
+                    prenotazione.DDI <= prenotazione.DDF &&  // Inizio è prima della fine
+                    libro.Disponibilita > 0 &&  // Il libro è disponibile
+                    prenotazione.DDF <= prenotazione.DDI.AddDays(libro.PrenotazioneMax + 1)  // Non supera il limite di giorni
+                )
                 {
-                    Console.WriteLine(ex.ToString());
+                    lock (_semaforo)
+                    {
+                        bool prenotato = libreriaContext.Prenotazioni.Any(p => p.LibroID == prenotazione.LibroID && p.IdUtente == prenotazione.IdUtente);
+                        if (prenotato) return false;
+
+                        libreriaContext.Prenotazioni.Add(prenotazione);
+
+                        if (Save().Result > 0)
+                            return true;
+                    }
                 }
+
+                return false;
             }
-            return false;
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return false;
+            }
         }
 
         public async Task<bool> Update(Prenotazione prenotazione)
