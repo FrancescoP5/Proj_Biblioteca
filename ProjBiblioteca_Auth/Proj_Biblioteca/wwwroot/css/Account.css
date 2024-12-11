@@ -1,24 +1,29 @@
-﻿.Accesso,.Registrazione{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center
+﻿.Accesso, .Registrazione {
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center
 }
 
-.FormAccesso,.FormRegistrazione{
+.FormAccesso, .FormRegistrazione {
+    margin-top: 5%;
     display: flex;
-    flex-direction:column;
-    align-items:center;
+    flex-direction: column;
+    align-items: center;
     min-width: 200px;
     min-height: 200px;
-    padding:20px;
+    padding: 20px;
     box-shadow: 0 0 10px black;
-    gap:10px;
-    border-radius:10px;
+    gap: 10px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: saturate(180%) blur(10px);
 }
 
 a{
     text-decoration:underline;
+    color:orchid;
 }
 
 a:hover{
@@ -29,6 +34,18 @@ a:hover{
     display:none;
 }
 
+.container {
+    display: flex;
+    justify-content: center;
+    padding:5% 0;
+}
+
+.AccountPage{
+    border-radius:4px;
+    padding:50px;
+    min-height:70vh;
+    background-color:white;
+}
 
 .prenotazioni, .utenti{
     display: flex;
@@ -54,7 +71,7 @@ a:hover{
     }
 
 .FormAccesso button, .FormRegistrazione button{
-    background-color:black;
+    background-color:cornflowerblue;
     color:white;
     padding:5px;
     border-radius:3px;
@@ -80,7 +97,6 @@ a:hover{
 .table-columns{
     font-weight:bold;
 }
-
 
 .success:after{
     content: "Successo!";

@@ -10,7 +10,7 @@ namespace Proj_Biblioteca.Controllers
     public class LibroController(ILogger<BaseController> logger, ILibreriaManager libreriaManager) : BaseController(logger, libreriaManager)
     {
         [AllowAnonymous]
-        public async Task<IActionResult> Elenco()
+        public async Task<IActionResult> Elenco(string? search)
         {
             UtenteViewModel? UtenteLoggato = await _libreriaManager.Utenti().GetLoggedUser(User);
 
@@ -19,9 +19,16 @@ namespace Proj_Biblioteca.Controllers
             else
                 ViewData.Add("Utente", UtenteLoggato);
 
-            ObjectResult? result = await GetLibri() as ObjectResult;
+            if(search == null)
+            {
+                ObjectResult? result = await GetLibri() as ObjectResult;
+                return View(result!.Value);
+            }
+            else
+            {
+                return View(await _libreriaManager.Libri().Cerca(search));
+            }
 
-            return View(result!.Value);
         }
 
         [Authorize(Roles = "Admin")]
@@ -45,6 +52,17 @@ namespace Proj_Biblioteca.Controllers
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetLibri()
+        {
+            return Ok(await _libreriaManager.Libri().Elenco());
+        }
+
+        // ~/Libro/GetLibri/search
+        /*
+         * Ritorna tutti i libri
+         */
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetLibri(string search)
         {
             return Ok(await _libreriaManager.Libri().Elenco());
         }

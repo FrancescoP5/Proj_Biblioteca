@@ -6,6 +6,7 @@
 body {
     scrollbar-width: thin;
     scrollbar-color: transparent transparent;
+
 }
 ::-webkit-scrollbar
 {
@@ -21,19 +22,36 @@ body {
 }
 
 
+.backgroundImage {
+    position: fixed;
+    left:-10px;
+    top:-10px;
+    z-index: -1;
+    width: 110vw;
+    height: 110vh;
+    background-image: url("../img/background.jpg");
+    background-size:contain;
+    filter: blur(3px);
+}
+
 header{
-    padding:1vh;
+    position:fixed;
+    z-index:10;
+    width:100%;
     margin: 0px;
-    margin-bottom:10px;
     background-color: #a5001c;
     color:white;
-    border-bottom: solid 1px #808080;
     box-shadow:#000000 0 0 8px;
+}
+   
+.Nascosto{
+    display:none;
 }
 
 .NavBar{
     display:flex;
     align-items:center;
+    margin:0;
 }
 
 .NavBar .TitoloHeader{
@@ -44,21 +62,27 @@ header{
         cursor:pointer;
     }    
 
-
-
-.NavBar .Account{
-    font-size:30px;
-    margin-right: 20px;
+.Buttons{
+    position:absolute;
+    width:fit-content;
+    display:flex;
+    align-items:center;
+    gap:15px;
+    left:1rem;
 }
-    .NavBar .Account:hover,i.AggiungiLibro:hover{
-        cursor: pointer;
+
+.Buttons i{
+    font-size:20px;
+} 
+    .Buttons i:hover{
+      cursor:pointer;
     }
 
-.PageBody {
-    font-family:Arial;
+.Buttons .AggiungiLibro{
+    font-size: 30px;
+    font-weight:bold;
 }
 
-i.AggiungiLibro{
-    font-size: 50px;
-    margin-right: 30px;
+.PageBody {
+    font-family: Arial;
 }

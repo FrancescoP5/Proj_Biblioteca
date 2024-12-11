@@ -248,6 +248,11 @@ namespace Proj_Biblioteca.Service
             return await _repoLibri.Delete(libro);
 
         }
+
+        public async Task<IEnumerable<Libro?>> Cerca(string? cerca)
+        {
+            return (await _repoLibri.GetLibri()).Where(s => ((s??new()).Titolo ?? "").Contains(cerca??"", StringComparison.CurrentCultureIgnoreCase));
+        }
     }
 
     /// <summary>

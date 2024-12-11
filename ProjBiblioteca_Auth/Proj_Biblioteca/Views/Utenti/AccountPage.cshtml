@@ -15,119 +15,115 @@
     <link href="~/css/Account.css" rel="stylesheet"/>
 </head>
 <body>
+    <div class="container">
+
     <div class="jsAntiForgeryToken" >@Html.AntiForgeryToken()</div>
     @if(ViewData["Utente"]!=null) //Pagina account effettiva
     {
-
-
-
-        UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel(){Nome="NULL",Email="NULL",Ruolo="NULL"});
-
-
-
-        <span>
-            <strong>Benvenuto, @UtenteLoggato.Nome </strong>
-            <button class="disconnect">Disconnettiti </button>
-            <button class="delete">Elimina Account</button>
-            @if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
+            UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel(){Nome="NULL",Email="NULL",Ruolo="NULL"});
+        <div class="AccountPage">
+            <span>
+                <strong>Benvenuto, @UtenteLoggato.Nome </strong>
+                <button class="disconnect">Disconnettiti </button>
+                <button class="delete">Elimina Account</button>
+                @if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
+                {
+                    <button class="ruoli" id="gestisciRuoli" onclick="window.location.href='/Utenti/GestioneRuoli'">Gestisci Ruoli</button>
+                }
+            </span>
+            <br /><br />
+            <h3>Prenotazioni</h3>
+            <br /><hr />
+            @if (Model != null && Model.Count()>0)
             {
-                <button class="ruoli" id="gestisciRuoli" onclick="window.location.href='/Utenti/GestioneRuoli'">Gestisci Ruoli</button>
-            }
-        </span>
-        <br /><br />
-        <h3>Prenotazioni</h3>
-        <br /><hr />
-        if (Model != null && Model.Count()>0)
-        {
-            if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
-            {
-                <div class="prenotazioni">
-                    <table class="table">
-                        <tr class="table-columns">
-                            <th>ID</th>
-                            <th>Titolo</th>
-                            <th>ISBN</th>
-                            <th>Data di Prenotazione</th>
-                            <th>Data di Restituzione</th>
-                            <th>Utente</th>
-                            <th>Elimina Prenotazione</th>
+                if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
+                {
+                    <div class="prenotazioni">
+                        <table class="table">
+                            <tr class="table-columns">
+                                <th>ID</th>
+                                <th>Titolo</th>
+                                <th>ISBN</th>
+                                <th>Data di Prenotazione</th>
+                                <th>Data di Restituzione</th>
+                                <th>Utente</th>
+                                <th>Elimina Prenotazione</th>
 
-                        </tr>
-                        @foreach (Prenotazione prenotazione in Model)
-                        {
-
-                            string utcDateDDI = prenotazione.DDI.ToString("dd/MM/yyyy");
-                            string utcDateDDF = prenotazione.DDF.ToString("dd/MM/yyyy");
-                            <tr class="table-values">
-                                <th>@((prenotazione?? new Prenotazione()).ID)</th>
-                                <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).Titolo)</th>
-                                <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).ISBN)</th>
-                                <th class="toLocalDate" data-utcdate="@(utcDateDDI)">@(utcDateDDI)UTC</th>
-                                <th class="toLocalDate" data-utcdate="@(utcDateDDF)">@(utcDateDDF)UTC</th>
-                                <th>@(((prenotazione ?? new Prenotazione()).UtenteViewModel ?? new UtenteViewModel() { Email = "NULL", Nome = "NULL", Ruolo = "NULL" }).Email)</th>
-                                <th>
-                                    <form onsubmit="return false">
-
-                                        <input value="@((prenotazione?? new Prenotazione()).ID)" name="id" hidden readonly />
-                                        <button class="RimuoviPrenotazione" type="submit">X</button>
-                                    </form>
-                                </th>
                             </tr>
+                            @foreach (Prenotazione prenotazione in Model)
+                            {
+
+                                string utcDateDDI = prenotazione.DDI.ToString("dd/MM/yyyy");
+                                string utcDateDDF = prenotazione.DDF.ToString("dd/MM/yyyy");
+                                <tr class="table-values">
+                                    <th>@((prenotazione?? new Prenotazione()).ID)</th>
+                                    <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).Titolo)</th>
+                                    <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).ISBN)</th>
+                                    <th class="toLocalDate" data-utcdate="@(utcDateDDI)">@(utcDateDDI)UTC</th>
+                                    <th class="toLocalDate" data-utcdate="@(utcDateDDF)">@(utcDateDDF)UTC</th>
+                                    <th>@(((prenotazione ?? new Prenotazione()).UtenteViewModel ?? new UtenteViewModel() { Email = "NULL", Nome = "NULL", Ruolo = "NULL" }).Email)</th>
+                                    <th>
+                                        <form onsubmit="return false">
+
+                                            <input value="@((prenotazione?? new Prenotazione()).ID)" name="id" hidden readonly />
+                                            <button class="RimuoviPrenotazione" type="submit">X</button>
+                                        </form>
+                                    </th>
+                                </tr>
                             
-                        }
-                    </table>
+                            }
+                        </table>
+                    </div>
+
+
+                }
+                else
+                {
+
+                    <div class="prenotazioni">
+                        <table class="table">
+                            <tr class="table-columns">
+                                <th>Titolo</th>
+                                <th>Autore</th>
+                                <th>ISBN</th>
+                                <th>Data di Prenotazione</th>
+                                <th>Data di Restituzione</th>
+                                <th>Elimina Prenotazione</th>
+                            </tr>
+                            @foreach (Prenotazione prenotazione in Model)
+                            {
+                                string utcDateDDI = prenotazione.DDI.ToString("dd/MM/yyyy");
+                                string utcDateDDF = prenotazione.DDF.ToString("dd/MM/yyyy");
+                                <tr class="table-values">
+                                    <th>@((prenotazione.Libro ?? new Libro()).Titolo)</th>
+                                    <th>@((prenotazione.Libro ?? new Libro()).Autore)</th>
+                                    <th>@((prenotazione.Libro ?? new Libro()).ISBN)</th>
+                                    <th class="toLocalDate" data-utcdate="@(utcDateDDI)">@(utcDateDDI)UTC</th>
+                                    <th class="toLocalDate" data-utcdate="@(utcDateDDF)">@(utcDateDDF)UTC</th>
+                                    <th>
+                                        <form onsubmit="return false">
+                                            <input value="@(prenotazione.ID)" name="id" hidden readonly/>
+                                            <button class="RimuoviPrenotazione" type="submit">X</button>
+                                        </form>
+                                    </th>
+                                </tr>
+                            }
+                        </table>
                 </div>
-
-
+                }
             }
             else
             {
-
-                <div class="prenotazioni">
-                    <table class="table">
-                        <tr class="table-columns">
-                            <th>Titolo</th>
-                            <th>Autore</th>
-                            <th>ISBN</th>
-                            <th>Data di Prenotazione</th>
-                            <th>Data di Restituzione</th>
-                            <th>Elimina Prenotazione</th>
-                        </tr>
-                        @foreach (Prenotazione prenotazione in Model)
-                        {
-                            string utcDateDDI = prenotazione.DDI.ToString("dd/MM/yyyy");
-                            string utcDateDDF = prenotazione.DDF.ToString("dd/MM/yyyy");
-                            <tr class="table-values">
-                                <th>@((prenotazione.Libro ?? new Libro()).Titolo)</th>
-                                <th>@((prenotazione.Libro ?? new Libro()).Autore)</th>
-                                <th>@((prenotazione.Libro ?? new Libro()).ISBN)</th>
-                                <th class="toLocalDate" data-utcdate="@(utcDateDDI)">@(utcDateDDI)UTC</th>
-                                <th class="toLocalDate" data-utcdate="@(utcDateDDF)">@(utcDateDDF)UTC</th>
-                                <th>
-                                    <form onsubmit="return false">
-                                        <input value="@(prenotazione.ID)" name="id" hidden readonly/>
-                                        <button class="RimuoviPrenotazione" type="submit">X</button>
-                                    </form>
-                                </th>
-                            </tr>
-                        }
-                    </table>
-            </div>
+                <h4>Nessuna Prenotazione.</h4>
             }
-        }
-        else
-        {
-            <h4>Nessuna Prenotazione.</h4>
-        }
+        </div>
     }
     else // Login/Registrazione quando non c'è account loggato
     {
         string classeLogin = (bool)(ViewData["IsRegistrazione"] ?? false) ? "Accesso hidden" : "Accesso";
         <div class="@(classeLogin)" id="FormAccesso">
-            <h2 class="Titolo">Accesso</h2>
-            <br />
-
             <form class="FormAccesso" id="loginForm" action="/Utenti/Login" method="post">
+                <h2 class="Titolo">Accesso</h2>
                 @Html.AntiForgeryToken()
                 <label>Email:</label>
                 <input type="email" id="email" name="email" placeholder="example@example.com" required/>
@@ -135,23 +131,20 @@
                 <input type="password" id="password" name="password" placeholder="password" required/>
                 <button type="submit">Login</button>
             </form>
-
-            <br />
-            @if (ViewData["Messaggio"]!=null)
-            {
-                <span class="erroreLogin">@((ViewData["Messaggio"]??"Null").ToString())</span><br />
-            }
-                
-            
+                <br />
+                @if (ViewData["Messaggio"]!=null)
+                {
+                    <span class="erroreLogin">@((ViewData["Messaggio"]??"Null").ToString())</span><br />
+                }
                 <span>Non hai un account? <a onclick="FormRegistrazione()">Registrati.</a></span>
+
         </div>
 
         string classeRegistrazione = (bool)(ViewData["IsRegistrazione"] ?? false) ? "Registrazione" : "Registrazione hidden";
         <div class="@(classeRegistrazione)" id="FormRegistrazione">
-            <h2 class="Titolo">Registrazione</h2>
-            <br />
 
             <form class="FormRegistrazione" id="registrationForm" action="/Utenti/Registrazione" method="post">
+                <h2 class="Titolo">Registrazione</h2>
                 @Html.AntiForgeryToken()
                 <label>Nome:</label>
                 <input type="text" id="nomeReg" name="nome" placeholder="Nome" required />
@@ -163,20 +156,21 @@
                 <input type="password" id="passwordConfermaReg" name="confermaPassword" placeholder="password" required />
                 <button type="submit">Registrati</button>
             </form>
-
-            <br />
-            @if (ViewData["Messaggio"] != null)
-            {
-                <span class="erroreLogin">@((ViewData["Messaggio"] ?? "Null").ToString())</span>
-
                 <br />
-            }
+                @if (ViewData["Messaggio"] != null)
+                {
+                    <span class="erroreLogin">@((ViewData["Messaggio"] ?? "Null").ToString())</span>
+
+                    <br />
+                }
+                <span>Hai un account? <a onclick="FormLogin()">Accedi.</a></span>
 
 
-            <span>Hai un account? <a onclick="FormLogin()">Accedi.</a></span>
+
 
         </div>
     }
+    </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="~/js/Account.js"></script>
 </body>
