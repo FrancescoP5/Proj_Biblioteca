@@ -12,7 +12,7 @@ namespace Proj_Biblioteca.Controllers
     public class LibroController(ILogger<BaseController> logger, ILibreriaManager libreriaManager) : BaseController(logger, libreriaManager)
     {
         [AllowAnonymous]
-        public async Task<IActionResult> Elenco(string? search)
+        public async Task<IActionResult> Elenco(int page, string? search=null)
         {
             UtenteViewModel? UtenteLoggato = await _libreriaManager.Utenti().GetLoggedUser(User);
 
@@ -23,12 +23,13 @@ namespace Proj_Biblioteca.Controllers
 
             if(search == null)
             {
-                ObjectResult? result = await GetLibri() as ObjectResult;
+                ObjectResult? result = await GetLibri(page) as ObjectResult;
                 return View(result!.Value);
             }
             else
             {
-                return View(await _libreriaManager.Libri().Cerca(search));
+                ObjectResult? result = await GetLibri(page,search) as ObjectResult;
+                return View(result!.Value);
             }
 
         }
@@ -53,9 +54,9 @@ namespace Proj_Biblioteca.Controllers
          */
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetLibri()
+        public async Task<IActionResult> GetLibri(int page)
         {
-            return Ok(await _libreriaManager.Libri().Elenco());
+            return Ok(await _libreriaManager.Libri().Elenco(page,null));
         }
 
         // ~/Libro/GetLibri/search
@@ -64,9 +65,9 @@ namespace Proj_Biblioteca.Controllers
          */
         [HttpGet]
         [AllowAnonymous]
-        public async Task<IActionResult> GetLibri(string search)
+        public async Task<IActionResult> GetLibri(int page, string search)
         {
-            return Ok(await _libreriaManager.Libri().Elenco());
+            return Ok(await _libreriaManager.Libri().Elenco(page, search));
         }
 
         // ~/Libro/FindLibro/{id}

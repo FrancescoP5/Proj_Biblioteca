@@ -4,6 +4,7 @@ using Proj_Biblioteca.DAL;
 using Proj_Biblioteca.Models;
 using Proj_Biblioteca.Utils;
 using Proj_Biblioteca.ViewModels;
+using System.Linq.Expressions;
 using System.Net.Mail;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
@@ -41,7 +42,6 @@ namespace Proj_Biblioteca.Service
     /// </summary>
     public class LibreriaManager(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti) : ILibreriaManager
     {
-
         protected readonly IRepoPrenotazioni _repoPrenotazioni = repoPrenotazioni;
         protected readonly IRepoLibri _repoLibri = repoLibri;
         protected readonly IRepoUtenti _repoUtenti = repoUtenti;
@@ -219,14 +219,38 @@ namespace Proj_Biblioteca.Service
     /// </summary>
     public class Libri(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti) : LibreriaManager(repoPrenotazioni, repoLibri, repoUtenti)
     {
-        public async Task<IEnumerable<Libro?>> Elenco()
+
+        public async Task<Tuple<IEnumerable<Libro?>,int>> Elenco(int? page, string? search)
         {
-            return await _repoLibri.GetLibri();
+            int pageSize = 9;
+
+            page ??= 1;
+
+            IEnumerable<Libro?> libri = Enumerable.Empty<Libro>();
+
+            Expression<Func<Libro, bool>>? filter = null;
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                filter = l => (l.Titolo ?? "").ToLower().Contains(search.ToLower());
+
+                libri = await _repoLibri.GetListAsync(filter, page, pageSize);
+            }
+            else
+            {
+                libri = await _repoLibri.GetListAsync(filter, page, pageSize);
+            }
+
+            int totalPages = await _repoLibri.PageCountAsync(pageSize, filter);
+
+            return new(libri,totalPages);
+            
         }
+
 
         public async Task<Libro?> FindLibro(int? id)
         {
-            return await _repoLibri.GetLibro(id ?? 0);
+            return await _repoLibri.GetAsync(l=>l.ID == (id??0));
         }
 
         public async Task<bool> Aggiungi(Libro libro)
@@ -247,11 +271,6 @@ namespace Proj_Biblioteca.Service
 
             return await _repoLibri.Delete(libro);
 
-        }
-
-        public async Task<IEnumerable<Libro?>> Cerca(string? cerca)
-        {
-            return (await _repoLibri.GetLibri()).Where(s => ((s??new()).Titolo ?? "").Contains(cerca??"", StringComparison.CurrentCultureIgnoreCase));
         }
     }
 
@@ -322,7 +341,7 @@ namespace Proj_Biblioteca.Service
             if (prenotazione.IdLibro == null || prenotazione.Inizio == null || prenotazione.Fine == null)
                 return CodiceStato.Dati_Insufficienti;
 
-            Libro? libro = await _repoLibri.GetLibro(prenotazione.IdLibro ?? 0);
+            Libro? libro = await _repoLibri.GetAsync(l=>l.ID==(prenotazione.IdLibro??0));
 
             if (libro == null)
                 return CodiceStato.Errore;

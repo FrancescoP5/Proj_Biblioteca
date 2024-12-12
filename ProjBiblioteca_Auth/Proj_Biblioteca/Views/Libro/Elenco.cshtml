@@ -4,7 +4,7 @@
 @using Proj_Biblioteca.Controllers
 @using Proj_Biblioteca.Models
 @using Proj_Biblioteca.ViewModels
-@model IEnumerable<Libro>
+@model Tuple<IEnumerable<Libro>,int>
 
 <!DOCTYPE html>
 <html>
@@ -16,7 +16,7 @@
 <body>
     <div class="Elenco">
         <div class="Libri">
-            @foreach(Libro item in Model)
+            @foreach(Libro item in Model.Item1)
             {
                 UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel() {Nome = "NULL", Email = "NULL", Ruolo="NULL" });
 
@@ -44,6 +44,43 @@
                             @Html.ActionLink("Modifica", "Modifica", "Libro", new { id = item.ID })
                         }
                     </div>
+                </div>
+            }
+        </div>
+        <div class="Pagine">
+
+            @{
+                var request = ViewContext.HttpContext.Request;
+                string requestString = request.QueryString.ToUriComponent() ?? "";
+
+                string urlQuery(int i)
+                {
+                    string result="";
+
+                    if (requestString.Contains("page"))
+                    {
+                        int indx = requestString.IndexOf("page=") + 5;
+                        
+                        ReadOnlySpan<char> span = requestString.AsSpan();
+                        result = string.Concat(span[..indx], $"{i}", span[(indx + $"{i - 1}".Length)..]);
+
+                    }
+                    else if (requestString.Contains("?"))
+                    {
+                        result = string.Concat(requestString,$"&page={i}");
+                    }
+                    else
+                    {
+                        result = string.Concat(requestString,$"?page={i}");
+                    }
+
+                    return result;
+                }
+            }
+            @for(int i=0; i<Model.Item2; i++)
+            {
+                <div class="Pagina" id="@(i+1)">
+                    <a href="/Libro/Elenco/@(urlQuery(i+1))">@(i + 1)</a>
                 </div>
             }
         </div>

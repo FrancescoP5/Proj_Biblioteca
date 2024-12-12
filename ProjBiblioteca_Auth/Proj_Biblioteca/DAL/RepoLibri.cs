@@ -1,49 +1,81 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
+using System.Linq.Expressions;
 
 namespace Proj_Biblioteca.DAL
 {
     public interface IRepoLibri : IDisposable
     {
-        Task<IEnumerable<Libro?>> GetLibri();
-        Task<Libro?> GetLibro(int id);
+        Task<IEnumerable<Libro?>> GetListAsync(Expression<Func<Libro, bool>>? filters = null, int? page = null, int? pageSize = null);
+        Task<Libro?> GetAsync(Expression<Func<Libro, bool>> filters);
+
+        Task<int> PageCountAsync(int pageSize, Expression<Func<Libro, bool>>? filters = null);
 
         Task<bool> Insert(Libro libro);
         Task<bool> Update(Libro libro);
         Task<bool> Delete(Libro libro);
-
+        
         Task<int> Save();
     }
 
     public class RepoLibri(LibreriaContext libreriaContext) : IRepoLibri, IDisposable
     {
-
         private readonly LibreriaContext libreriaContext = libreriaContext;
 
-        public async Task<IEnumerable<Libro?>> GetLibri()
+        public async Task<IEnumerable<Libro?>> GetListAsync(Expression<Func<Libro, bool>>? filters = null, int? page = null, int? pageSize = null)
         {
             try
             {
-                return await libreriaContext.Libri.AsNoTracking().ToListAsync();
+                IQueryable<Libro> query = libreriaContext.Libri.AsQueryable().AsNoTracking();
+
+                if (filters != null)
+                    query = query.Where(filters);
+
+                if (page.HasValue && pageSize.HasValue)
+                {
+                    int pageInt = Math.Max(page.Value - 1, 0);
+                    int pageSizeInt = Math.Max(pageSize.Value, 1);
+
+                    query = query.OrderBy(l => l.ID).Skip(pageInt * pageSizeInt).Take(pageSizeInt);
+                }
+
+                return await query.ToListAsync();
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return Enumerable.Empty<Libro?>();
+                Console.WriteLine($"Errore durante il caricamento dei libri: {ex.Message}");
+                return Enumerable.Empty<Libro>();
             }
         }
 
-        public async Task<Libro?> GetLibro(int id)
+        public async Task<Libro?> GetAsync(Expression<Func<Libro, bool>> filters)
         {
             try
             {
-                return await libreriaContext.Libri.AsNoTracking().FirstOrDefaultAsync(l => l.ID == id);
+                return await libreriaContext.Libri.AsNoTracking().FirstOrDefaultAsync(filters);
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine($"Errore durante il caricamento del libro: {ex.Message}");
                 return null;
+            }
+        }
+
+        public async Task<int> PageCountAsync(int pageSize, Expression<Func<Libro, bool>>? filters = null)
+        {
+            try
+            {
+                pageSize = pageSize <= 0 ? 1 : pageSize;
+
+                int totalCount = await libreriaContext.Libri.AsNoTracking().CountAsync(filters ?? (x => true));
+                
+                return (int) Math.Ceiling((double)totalCount / pageSize); 
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Errore durante il caricamento dei libri: {ex.Message}");
+                return 0;
             }
         }
 
