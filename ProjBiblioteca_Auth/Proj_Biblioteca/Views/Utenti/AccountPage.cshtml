@@ -2,7 +2,7 @@
 @using Proj_Biblioteca.Controllers;
 @using Proj_Biblioteca.Models;
 @using Proj_Biblioteca.ViewModels
-@model IEnumerable<Prenotazione>
+@model Tuple<IEnumerable<Prenotazione>,int>
 
 @{
     Layout = "_Layout";
@@ -15,6 +15,20 @@
     <link href="~/css/Account.css" rel="stylesheet"/>
 </head>
 <body>
+    @{
+        string urlBase = "/Utenti/AccountPage/?";
+        string urlCurrentSearch = $"&search={ViewBag.Search ?? string.Empty}";
+        string urlCurrentPage = $"&page={ViewBag.Page ?? 1}";
+        string urlCurrentOrder = ViewBag.ordinaDDI != -1 ? $"&ordinaDDI={ViewBag.ordinaDDI}" : 
+                                 ViewBag.ordinaDDF != -1 ? $"&ordinaDDF={ViewBag.ordinaDDF}" : 
+                                 "";
+
+        string classDDI = ViewBag.ordinaDDI == -1 ? "none": ViewBag.ordinaDDI == 0 ? "order_desc" : "order";
+        string classDDF = ViewBag.ordinaDDF == -1 ? "none": ViewBag.ordinaDDF == 0 ? "order_desc" : "order";
+
+        string nextDDI = ViewBag.ordinaDDI == -1 ? "0" : ViewBag.ordinaDDI == 0 ? "1" : "-1";
+        string nextDDF = ViewBag.ordinaDDF == -1 ? "0" : ViewBag.ordinaDDF == 0 ? "1" : "-1";
+    }
     <div class="container">
 
     <div class="jsAntiForgeryToken" >@Html.AntiForgeryToken()</div>
@@ -34,23 +48,28 @@
             <br /><br />
             <h3>Prenotazioni</h3>
             <br /><hr />
-            @if (Model != null && Model.Count()>0)
+                @if (Model != null && Model.Item1.Count() > 0)
             {
                 if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
                 {
                     <div class="prenotazioni">
+                            <form method="get" action="/Utenti/AccountPage/" class="searchbar">
+                                <input type="text" name="search" id="search" placeholder="e-mail.." />
+                                <button type="submit" id="submitSearch">Cerca</button>
+                            </form>
+                            <br />
                         <table class="table">
                             <tr class="table-columns">
                                 <th>ID</th>
                                 <th>Titolo</th>
                                 <th>ISBN</th>
-                                <th>Data di Prenotazione</th>
-                                <th>Data di Restituzione</th>
+                                    <th class="ddi"><a class="ordine" href="@(urlBase+urlCurrentSearch+urlCurrentPage)&ordinaDDI=@(nextDDI)">Data di Prenotazione</a><div class="tipOrd @(classDDI)"></div></th>
+                                    <th class="ddf"><a class="ordine" href="@(urlBase+urlCurrentSearch+urlCurrentPage)&ordinaDDF=@(nextDDF)">Data di Restituzione</a><div class="tipOrd @(classDDF)"></div></th>
                                 <th>Utente</th>
                                 <th>Elimina Prenotazione</th>
 
                             </tr>
-                            @foreach (Prenotazione prenotazione in Model)
+                            @foreach (Prenotazione prenotazione in Model.Item1)
                             {
 
                                 string utcDateDDI = prenotazione.DDI.ToString("dd/MM/yyyy");
@@ -73,13 +92,24 @@
                             
                             }
                         </table>
+                        <div class="Pagine">
+                            <div class="Pagina prev">
+                                    <a href="@(urlBase+urlCurrentSearch+urlCurrentOrder)&page=@Math.Clamp(ViewBag.Page-1,1,Model.Item2)">«</a>
+                            </div>
+                            @for (int i = 0; i < Model.Item2; i++)
+                            {
+                                <div class="Pagina @(i+1 == (Math.Max(ViewBag.Page,1)) ? $"paginaCorrente":"")" id="@(i+1)">
+                                    <a href="@(urlBase+urlCurrentSearch+urlCurrentOrder)&page=@(i+1)">@(i + 1)</a>
+                                </div>
+                            }
+                            <div class="Pagina next">
+                                    <a href="@(urlBase+urlCurrentSearch+urlCurrentOrder)&page=@Math.Clamp(ViewBag.Page+1,1,Model.Item2)">»</a>
+                            </div>
+                        </div>
                     </div>
-
-
                 }
                 else
                 {
-
                     <div class="prenotazioni">
                         <table class="table">
                             <tr class="table-columns">
@@ -90,7 +120,7 @@
                                 <th>Data di Restituzione</th>
                                 <th>Elimina Prenotazione</th>
                             </tr>
-                            @foreach (Prenotazione prenotazione in Model)
+                            @foreach (Prenotazione prenotazione in Model.Item1)
                             {
                                 string utcDateDDI = prenotazione.DDI.ToString("dd/MM/yyyy");
                                 string utcDateDDF = prenotazione.DDF.ToString("dd/MM/yyyy");

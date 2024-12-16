@@ -12,8 +12,11 @@ namespace Proj_Biblioteca.Controllers
     public class LibroController(ILogger<BaseController> logger, ILibreriaManager libreriaManager) : BaseController(logger, libreriaManager)
     {
         [AllowAnonymous]
-        public async Task<IActionResult> Elenco(int page, string? search=null)
+        public async Task<IActionResult> Elenco(int page=1, string? search=null)
         {
+            ViewBag.Search = search;
+            ViewBag.Page = page;
+
             UtenteViewModel? UtenteLoggato = await _libreriaManager.Utenti().GetLoggedUser(User);
 
             if (ViewData.ContainsKey("Utente"))

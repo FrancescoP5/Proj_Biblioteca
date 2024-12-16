@@ -12,8 +12,14 @@ namespace Proj_Biblioteca.Controllers
     [EnableRateLimiting("fixed")]
     public class UtentiController(ILogger<BaseController> logger, ILibreriaManager libreriaManager) : BaseController(logger, libreriaManager)
     {
-        public async Task<IActionResult> AccountPage()
+        public async Task<IActionResult> AccountPage(int? page=1, string? search="", int? ordinaDDI=-1, int? ordinaDDF=-1)
         {
+            ViewBag.Page = page; 
+            ViewBag.Search = search;
+            ViewBag.ordinaDDI = ordinaDDI;
+            ViewBag.ordinaDDF = ordinaDDF;
+
+
             UtenteViewModel? UtenteLoggato = await _libreriaManager.Utenti().GetLoggedUser(User);
 
             if (ViewData.ContainsKey("Messaggio"))
@@ -31,7 +37,7 @@ namespace Proj_Biblioteca.Controllers
             else
                 ViewData.Add("IsRegistrazione", TempData["IsRegistrazione"]);
 
-            return View(await _libreriaManager.Utenti().PrenotazioniUtente(UtenteLoggato));
+            return View(await _libreriaManager.Utenti().PrenotazioniUtente(UtenteLoggato, page, search, ordinaDDI, ordinaDDF));
         }
 
         [Authorize(Roles = "Admin")]

@@ -156,7 +156,7 @@ namespace Proj_Biblioteca.DAL
 
             try
             {
-                List<Prenotazione> prenotazioni = await libreriaContext.Prenotazioni.Include(p => p.Libro).Where(p => p.IdUtente == utente.Id).ToListAsync();
+                List<Prenotazione> prenotazioni = await libreriaContext.Prenotazioni.Include(p => p.Libro).Where(p => p.UtenteId == utente.Id).ToListAsync();
                 foreach (Prenotazione p in prenotazioni)
                 {
 
@@ -302,7 +302,6 @@ namespace Proj_Biblioteca.DAL
             Dispose(true);
             GC.SuppressFinalize(this);
         }
-
     }
 
 

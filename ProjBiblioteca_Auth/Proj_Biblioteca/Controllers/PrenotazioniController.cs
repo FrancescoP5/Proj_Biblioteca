@@ -27,9 +27,9 @@ namespace Proj_Biblioteca.Controllers
          */
         [HttpGet]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> ElencoPrenotazioni()
+        public async Task<IActionResult> ElencoPrenotazioni(int? page, string? search, int? ordinaDDI, int? ordinaDDF)
         {
-            return Ok(await _libreriaManager.Prenotazioni().ElencoPrenotazioni());
+            return Ok(await _libreriaManager.Prenotazioni().ElencoPrenotazioni(page??1,search,ordinaDDI,ordinaDDF));
         }
 
         // ~/Prenotazioni/GetPrenotazioni

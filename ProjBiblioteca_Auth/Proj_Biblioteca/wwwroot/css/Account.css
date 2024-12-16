@@ -104,3 +104,50 @@ a:hover{
 .error:after{
     content:"Errore!";
 }
+
+
+
+.tipOrd{
+    font-size: 20px;
+    display: flex;
+    width: 20px;
+    height: 20px;
+}
+
+.none::after{
+    content:"-";
+}
+
+.order::after {
+    content: "˅";
+}
+
+.order_desc::after {
+    content: "˄";
+}
+
+.Pagine {
+    display: flex;
+    width: fit-content;
+    border: 1px solid;
+    margin-top:3px;
+    border-radius:4px;
+}
+.Pagina {
+    padding:5px;
+    border-left: 1px solid;
+    font-size:13px;
+} .Pagina:nth-child(1){
+      border-left:0px;
+  }
+    .Pagina a {
+        color: black;
+        text-decoration: none;
+    }
+.Pagina.paginaCorrente {
+    background-color: cadetblue;
+}
+    .Pagina.paginaCorrente a {
+        color: white;
+    }
+

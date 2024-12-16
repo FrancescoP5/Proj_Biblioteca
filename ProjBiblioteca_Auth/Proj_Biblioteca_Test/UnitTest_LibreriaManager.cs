@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Proj_Biblioteca.DAL;
 using Proj_Biblioteca.Data;
@@ -7,6 +8,9 @@ using Proj_Biblioteca.Service;
 using Proj_Biblioteca.Utils;
 using Proj_Biblioteca.ViewModels;
 using System.Data;
+using System.Linq.Expressions;
+using System.Linq;
+using static NuGet.Packaging.PackagingConstants;
 
 namespace Proj_Biblioteca_Test
 {
@@ -73,10 +77,10 @@ namespace Proj_Biblioteca_Test
         [TestMethod]
         public void Test_Lettura()
         {
-            var libri = libreriaManager.Libri().Elenco().Result;
+            var libri = libreriaManager.Libri().Elenco(null,null).Result;
 
             Assert.IsNotNull(libri);
-            Assert.AreEqual(2, libri.Count());
+            Assert.AreEqual(2, libri.Item1.Count());
         }
 
         [TestMethod]
@@ -107,25 +111,25 @@ namespace Proj_Biblioteca_Test
         [TestMethod]
         public void Test_Scrittura()
         {
-            var prenotazione = new Prenotazione() { ID = 101, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, IdUtente = "user123", LibroID = 2 };
+            var prenotazione = new Prenotazione() { ID = 101, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, UtenteId = "user123", LibroID = 2 };
 
-            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() {IdLibro = prenotazione.LibroID, IdUtente = prenotazione.IdUtente, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
+            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() {IdLibro = prenotazione.LibroID, IdUtente = prenotazione.UtenteId, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
             Assert.AreEqual(CodiceStato.Ok, codice);
         }
 
         [TestMethod]
         public void Test_Scrittura_LibroGiaPrenotato()
         {
-            var prenotazione = new Prenotazione() { ID = 101, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, IdUtente = "user123", LibroID = 1 };
-            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() { IdLibro = prenotazione.LibroID, IdUtente = prenotazione.IdUtente, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
+            var prenotazione = new Prenotazione() { ID = 101, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, UtenteId = "user123", LibroID = 1 };
+            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() { IdLibro = prenotazione.LibroID, IdUtente = prenotazione.UtenteId, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
             Assert.AreEqual(CodiceStato.Errore_Client, codice);
         }
 
         [TestMethod]
         public void Test_Scrittura_DatiInsufficienti()
         {
-            var prenotazione = new Prenotazione() { ID = 101, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, IdUtente = "user123", LibroID = 2 };
-            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() { IdLibro = null, IdUtente = prenotazione.IdUtente, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
+            var prenotazione = new Prenotazione() { ID = 101, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, UtenteId = "user123", LibroID = 2 };
+            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() { IdLibro = null, IdUtente = prenotazione.UtenteId, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
             Assert.AreEqual(CodiceStato.Dati_Insufficienti, codice);
         }
     }
@@ -240,14 +244,30 @@ namespace Proj_Biblioteca_Test
             new Libro { ID = 2, Titolo = "Libro di Test", Disponibilita = 5 }
         ];
 
-        public Task<IEnumerable<Libro?>> GetLibri()
+        public Task<IEnumerable<Libro?>> GetListAsync(Expression<Func<Libro, bool>>? filters = null, int? page = null, int? pageSize = null)
         {
-            return Task.FromResult(_libri.AsEnumerable<Libro?>());
+            IQueryable<Libro> query = _libri.AsQueryable().Where(filters ?? (x => true));
+
+
+            return Task.FromResult(query.AsEnumerable<Libro?>());
         }
 
-        public Task<Libro?> GetLibro(int id)
+        public Task<Libro?> GetAsync(Expression<Func<Libro, bool>> filters)
         {
-            return Task.FromResult(_libri.FirstOrDefault(l => l.ID == id));
+            IQueryable<Libro> query = _libri.AsQueryable();
+            return Task.FromResult(query.FirstOrDefault(filters));
+        }
+
+        public Task<int> PageCountAsync(int pageSize, Expression<Func<Libro, bool>>? filters = null)
+        {
+            pageSize = pageSize <= 0 ? 1 : pageSize;
+            IQueryable<Libro> query = _libri.AsQueryable();
+
+
+            int totalCount = query.Count(filters ?? (x => true));
+
+            return Task.FromResult((int)Math.Ceiling((double)totalCount / pageSize));
+
         }
 
         public Task<bool> Insert(Libro libro)
@@ -289,22 +309,33 @@ namespace Proj_Biblioteca_Test
     {
         public List<Prenotazione> _prenotazioni =
         [
-            new Prenotazione() {ID = 1, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, IdUtente= "user123", LibroID=1 }
+            new Prenotazione() {ID = 1, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, UtenteId= "user123", LibroID=1 }
         ];
 
-        public Task<IEnumerable<Prenotazione?>> GetPrenotazioni()
+        public Task<IEnumerable<Prenotazione?>> GetListAsync(Expression<Func<Prenotazione, bool>>? filters = null, int? page = null, int? pageSize = null)
         {
-            return Task.FromResult(_prenotazioni.AsEnumerable<Prenotazione?>());
+            IQueryable<Prenotazione> query = _prenotazioni.AsQueryable().Where(filters ?? (x => true));
+
+
+            return Task.FromResult(query.AsEnumerable<Prenotazione?>());
         }
 
-        public Task<IEnumerable<Prenotazione?>> GetPrenotazioni(string idUtente)
+        public Task<Prenotazione?> GetAsync(Expression<Func<Prenotazione, bool>> filters)
         {
-            return Task.FromResult(_prenotazioni.Where(p => p.IdUtente == idUtente) as IEnumerable<Prenotazione?>);
+            IQueryable<Prenotazione> query = _prenotazioni.AsQueryable();
+            return Task.FromResult(query.FirstOrDefault(filters));
         }
 
-        public Task<Prenotazione?> GetPrenotazione(int id)
+        public Task<int> PageCountAsync(int pageSize, Expression<Func<Prenotazione, bool>>? filters = null)
         {
-            return Task.FromResult(_prenotazioni.FirstOrDefault(p => p.ID == id));
+            pageSize = pageSize <= 0 ? 1 : pageSize;
+            IQueryable<Prenotazione> query = _prenotazioni.AsQueryable();
+
+
+            int totalCount = query.Count(filters ?? (x => true));
+
+            return Task.FromResult((int)Math.Ceiling((double)totalCount / pageSize));
+
         }
 
         public Task<bool> Insert(Prenotazione prenotazione)
@@ -332,6 +363,30 @@ namespace Proj_Biblioteca_Test
         public void Dispose()
         {
             throw new NotImplementedException();
+        }
+
+        public Task<IEnumerable<Prenotazione?>> GetListAsync(int page, int pageSize)
+        {
+            IQueryable<Prenotazione> query = _prenotazioni.AsQueryable();
+
+
+            return Task.FromResult(query.AsEnumerable<Prenotazione?>());
+        }
+
+        public Task<IEnumerable<Prenotazione?>> GetListAsync(Expression<Func<Prenotazione, bool>> filters, int page, int pageSize)
+        {
+            IQueryable<Prenotazione> query = _prenotazioni.AsQueryable().Where(filters ?? (x => true));
+
+
+            return Task.FromResult(query.AsEnumerable<Prenotazione?>());
+        }
+
+        public Task<IEnumerable<Prenotazione?>> GetListAsync(Expression<Func<Prenotazione, bool>> filters, Expression<Func<Prenotazione, object>> ordina, bool ordina_desc, int page, int pageSize)
+        {
+            IQueryable<Prenotazione> query = _prenotazioni.AsQueryable().Where(filters ?? (x => true));
+
+
+            return Task.FromResult(query.AsEnumerable<Prenotazione?>());
         }
     }
 }

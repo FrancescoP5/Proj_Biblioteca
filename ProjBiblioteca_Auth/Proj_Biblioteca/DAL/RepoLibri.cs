@@ -145,8 +145,6 @@ namespace Proj_Biblioteca.DAL
 
         }
 
-
-
         public async Task<int> Save()
         {
             try
@@ -162,7 +160,6 @@ namespace Proj_Biblioteca.DAL
         }
 
         private bool disposed = false;
-
         protected virtual void Dispose(bool disposing)
         {
             var success = false;

@@ -124,18 +124,22 @@ namespace Proj_Biblioteca.Service
             return utentiViewModel;
         }
 
-        public async Task<IEnumerable<Prenotazione?>> PrenotazioniUtente(UtenteViewModel? utente)
+        public async Task<Tuple<IEnumerable<Prenotazione?>,int>> PrenotazioniUtente(UtenteViewModel? utente, int? page, string? search, int? ordinaDDI, int? ordinaDDF)
         {
+
+
             if (utente == null)
-                return Enumerable.Empty<Prenotazione>();
+                return new(Enumerable.Empty<Prenotazione>(),0);
 
             if (utente.Ruolo == "Admin")
             {
-                IEnumerable<Prenotazione?> prenotazioni = JsonConvert.DeserializeObject<IEnumerable<Prenotazione?>>(Encryption.Decrypt(await Prenotazioni().ElencoPrenotazioni())) ?? Enumerable.Empty<Prenotazione>();
+                var json = await Prenotazioni().ElencoPrenotazioni(page ?? 1, search, ordinaDDI, ordinaDDF);
+
+                Tuple<IEnumerable<Prenotazione?>,int> prenotazioni = JsonConvert.DeserializeObject<Tuple<IEnumerable<Prenotazione?>, int>>(Encryption.Decrypt(json)) ?? new(Enumerable.Empty<Prenotazione>(),0);
                 return prenotazioni;
             }
 
-            return JsonConvert.DeserializeObject<IEnumerable<Prenotazione?>>(Encryption.Decrypt(await Prenotazioni().GetPrenotazioni(utente.Id ?? ""))) ?? Enumerable.Empty<Prenotazione>();
+            return new(JsonConvert.DeserializeObject<IEnumerable<Prenotazione?>>(Encryption.Decrypt(await Prenotazioni().GetPrenotazioni(utente.Id ?? ""))) ?? Enumerable.Empty<Prenotazione>(),0);
         }
 
         public async Task<bool> CambiaRuolo(string id, string ruolo)
@@ -279,16 +283,44 @@ namespace Proj_Biblioteca.Service
     /// </summary>
     public class Prenotazioni(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti) : LibreriaManager(repoPrenotazioni, repoLibri, repoUtenti)
     {
-        public async Task<string> ElencoPrenotazioni()
+        public async Task<string> ElencoPrenotazioni(int page, string? search, int? ordinaDDI, int? ordinaDDF)
         {
-            IEnumerable<Prenotazione?> prenotazioni = await _repoPrenotazioni.GetPrenotazioni();
+            int pageSize = 10;
 
-            foreach (var prenotazione in prenotazioni)
+
+            Expression<Func<Prenotazione, bool>> filtri = x=> true;
+
+            if (!string.IsNullOrEmpty(search))
+                filtri = x => (x.Utente!.Email??"").ToLower().Contains(search.ToLower());
+
+            Expression<Func<Prenotazione,object>>? ordina = null;
+            bool desc = false;
+
+
+            if(ordinaDDI.HasValue && ordinaDDI>=0)
             {
-                if (prenotazione != null)
-                    prenotazione.UtenteViewModel = await Utenti().GetViewModel(prenotazione.IdUtente ?? "");
+                ordina = x => x.DDI;
+                desc = Convert.ToBoolean(ordinaDDI);
+            }
+            else if(ordinaDDF.HasValue && ordinaDDF >= 0)
+            {
+                ordina = x => x.DDF;
+                desc = Convert.ToBoolean(ordinaDDF);
             }
 
+            Tuple<IEnumerable<Prenotazione?>,int> prenotazioni = new(Enumerable.Empty<Prenotazione?>(),0);
+            int pageCount = await _repoPrenotazioni.PageCountAsync(pageSize, filtri);
+
+            if (ordina != null)
+                prenotazioni = new(await _repoPrenotazioni.GetListAsync(filtri, ordina, desc, page, pageSize), pageCount);
+            else
+                prenotazioni = new(await _repoPrenotazioni.GetListAsync(filtri, page, pageSize), pageCount);
+
+            foreach (var prenotazione in prenotazioni.Item1)
+            {
+                if (prenotazione != null)
+                    prenotazione.UtenteViewModel = await Utenti().GetViewModel(prenotazione.UtenteId ?? "");
+            }
             string JsonPrenotazioni = prenotazioni.ToJson();
 
             return Encryption.Encrypt(JsonPrenotazioni);
@@ -296,12 +328,14 @@ namespace Proj_Biblioteca.Service
 
         public async Task<string> GetPrenotazioni(string id)
         {
-            IEnumerable<Prenotazione?> prenotazioni = await _repoPrenotazioni.GetPrenotazioni(id);
+            Expression<Func<Prenotazione,bool>> filtro = p=>p.UtenteId == id;
+
+            IEnumerable<Prenotazione?> prenotazioni = await _repoPrenotazioni.GetListAsync(filtro,1,10);
 
             foreach (var prenotazione in prenotazioni)
             {
                 if (prenotazione != null)
-                    prenotazione.UtenteViewModel = await this.Utenti().GetViewModel(prenotazione.IdUtente ?? "");
+                    prenotazione.UtenteViewModel = await this.Utenti().GetViewModel(prenotazione.UtenteId ?? "");
                 
             }
             
@@ -314,10 +348,10 @@ namespace Proj_Biblioteca.Service
 
         public async Task<bool> RimuoviPrenotazione(int id, UtenteViewModel utente)
         {
-            Prenotazione? prenotazione = await _repoPrenotazioni.GetPrenotazione(id);
+            Prenotazione? prenotazione = await _repoPrenotazioni.GetAsync(p=> p.ID == id);
 
             if (utente.Ruolo == "Utente" && prenotazione != null)
-                prenotazione = prenotazione.IdUtente == utente.Id ? prenotazione : null;
+                prenotazione = prenotazione.UtenteId == utente.Id ? prenotazione : null;
 
             if (prenotazione == null) return false;
 
@@ -361,7 +395,7 @@ namespace Proj_Biblioteca.Service
                 DDI = DDI.AddHours(prenotazione.ClientTime + prenotazione.TimeOffset);
                 DDF = DDF.AddHours(prenotazione.ClientTime + prenotazione.TimeOffset);
 
-                bool AddResult = await _repoPrenotazioni.Insert(new Prenotazione() { LibroID = libro.ID, IdUtente = prenotazione.IdUtente, DDI = DDI, DDF = DDF });
+                bool AddResult = await _repoPrenotazioni.Insert(new Prenotazione() { LibroID = libro.ID, UtenteId = prenotazione.IdUtente, DDI = DDI, DDF = DDF });
 
                 if (AddResult)
                 {
