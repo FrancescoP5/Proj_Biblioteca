@@ -29,7 +29,9 @@
     border-left: 10px solid #3e2215;
     border-bottom: 4px ridge white;
     border-right: 2px ridge white;
+
 }
+
 
 .Libro.NonDisponibile{
    color:lightgray;
@@ -40,10 +42,22 @@
         box-shadow:unset;
     }
 
-.Libro .Titolo{
-    display:flex;
-    justify-content:center;
-}
+    .Libro .Titolo {
+        max-width: 200px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: flex;
+        justify-content: center;
+    }
+
+    .Libro .Autore {
+        max-width: 200px;
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
 
 .Img{
     display:flex;
@@ -79,7 +93,7 @@
     border: 1px solid;
     margin-top: 10px;
     border-radius: 3px;
-    background-color:cadetblue;
+    background-color: #9d0d0d;
 }
 
 .Pagina {
@@ -98,7 +112,7 @@
     }
 
     .Pagina.paginaCorrente {
-        background-color: darkblue;
+        background-color: #5a1313;
     }
 
         .Pagina.paginaCorrente a {

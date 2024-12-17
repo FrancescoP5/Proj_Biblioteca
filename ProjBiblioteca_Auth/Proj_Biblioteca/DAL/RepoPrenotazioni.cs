@@ -25,7 +25,7 @@ namespace Proj_Biblioteca.DAL
 
     public class RepoPrenotazioni(LibreriaContext libreriaContext) : IRepoPrenotazioni, IDisposable
     {
-        private static readonly object _semaforo = new object(); 
+        private static readonly object _semaforo = new(); 
         private readonly LibreriaContext libreriaContext = libreriaContext;
 
         public async Task<IEnumerable<Prenotazione?>> GetListAsync(int page, int pageSize)
@@ -67,6 +67,7 @@ namespace Proj_Biblioteca.DAL
                 {
                     ID = p.ID,
                     Libro = p.Libro,
+                    LibroID = p.LibroID,
                     DDF = p.DDF,
                     DDI = p.DDI,
                     UtenteId = p.UtenteId,
@@ -107,6 +108,7 @@ namespace Proj_Biblioteca.DAL
                 {
                     ID = p.ID,
                     Libro = p.Libro,
+                    LibroID = p.LibroID,
                     DDF = p.DDF,
                     DDI = p.DDI,
                     UtenteId = p.UtenteId,

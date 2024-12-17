@@ -259,11 +259,23 @@ namespace Proj_Biblioteca.Service
 
         public async Task<bool> Aggiungi(Libro libro)
         {
+            if ((libro.Titolo ?? "").Length > 300 || (libro.Autore ?? "").Length > 300)
+                return false;
+
+            if (libro.Disponibilita < 0 || libro.PrenotazioneMax < 0)
+                return false;
+
             return await _repoLibri.Insert(libro);
         }
 
         public async Task<bool> Aggiorna(Libro libro)
         {
+            if ((libro.Titolo??"").Length > 300 || (libro.Autore ?? "").Length > 300)
+                return false;
+
+            if (libro.Disponibilita < 0 || libro.PrenotazioneMax < 0)
+                return false;
+
             return await _repoLibri.Update(libro);
         }
 
@@ -285,7 +297,7 @@ namespace Proj_Biblioteca.Service
     {
         public async Task<string> ElencoPrenotazioni(int page, string? search, int? ordinaDDI, int? ordinaDDF)
         {
-            int pageSize = 10;
+            int pageSize = 5;
 
 
             Expression<Func<Prenotazione, bool>> filtri = x=> true;

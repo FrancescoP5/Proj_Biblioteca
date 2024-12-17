@@ -27,12 +27,18 @@ namespace Proj_Biblioteca.Controllers
             if(search == null)
             {
                 ObjectResult? result = await GetLibri(page) as ObjectResult;
-                return View(result!.Value);
+                if (result != null)
+                    return View(result.Value);
+
+                return RedirectToAction("Elenco", "Libro");
             }
             else
             {
                 ObjectResult? result = await GetLibri(page,search) as ObjectResult;
-                return View(result!.Value);
+                if (result != null)
+                    return View(result.Value);
+
+                return RedirectToAction("Elenco", "Libro");
             }
 
         }
@@ -42,7 +48,12 @@ namespace Proj_Biblioteca.Controllers
         {
             ObjectResult? result = await FindLibro(id) as ObjectResult;
 
-            return View(result!.Value);
+            ViewBag.Message = TempData["ModifyMessage"];
+
+            if(result!=null)
+            return View(result.Value);
+
+            return RedirectToAction("Elenco","Libro");
         }
 
         [Authorize(Roles = "Admin")]
@@ -130,8 +141,8 @@ namespace Proj_Biblioteca.Controllers
             }
 
             _logger.LogInformation($"Libro: {libro.Titolo} Aggiornamento fallito alle ore {DateTime.UtcNow:HH:mm:ss}");
-
-            return RedirectToAction("Modifica", "Libro");
+            TempData["ModifyMessage"] = "Errore modifica libro";
+            return RedirectToAction("Modifica", "Libro", new { id = libro.ID });
         }
 
 

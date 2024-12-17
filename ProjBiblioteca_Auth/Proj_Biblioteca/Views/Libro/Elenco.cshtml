@@ -20,6 +20,10 @@
         string urlCurrentPage = $"&page={ViewBag.Page??1}";
     }
     <div class="Elenco">
+
+        @if(Model.Item1.Count()<=0 || Model.Item2 <=0){
+        <h3 style="color:white; margin-top:20px; padding: 50px;">Nessun Risultato..</h3>
+        }
         <div class="Libri">
             @foreach(Libro item in Model.Item1)
             {
@@ -52,20 +56,24 @@
                 </div>
             }
         </div>
-        <div class="Pagine">
-            <div class="Pagina prev">
-                <a href="@(urlBase+urlCurrentSearch)&page=@Math.Clamp(ViewBag.Page-1,1,Model.Item2)">«</a>
-            </div>
-            @for(int i=0; i<Model.Item2; i++)
-            {
-                <div class="Pagina @(i+1 == (Math.Max(ViewBag.Page,1)) ? $"paginaCorrente":"")" id="@(i+1)">
-                    <a href="@(urlBase+urlCurrentSearch)&page=@(i+1)">@(i + 1)</a>
+        @if (Model.Item2 > 0)
+        {
+            <div class="Pagine">
+                <div class="Pagina prev">
+                    <a href="@(urlBase+urlCurrentSearch)&page=@Math.Clamp(ViewBag.Page-1,1,Model.Item2)">«</a>
                 </div>
-            }
-            <div class="Pagina next">
-                <a href="@(urlBase+urlCurrentSearch)&page=@Math.Clamp(ViewBag.Page+1,1,Model.Item2)">»</a>
+                @for (int i = 0; i < Model.Item2; i++)
+                {
+                    <div class="Pagina @(i+1 == (Math.Max(ViewBag.Page,1)) ? $"paginaCorrente":"")" id="@(i+1)">
+                        <a href="@(urlBase+urlCurrentSearch)&page=@(i+1)">@(i + 1)</a>
+                    </div>
+                }
+                <div class="Pagina next">
+                    <a href="@(urlBase+urlCurrentSearch)&page=@Math.Clamp(ViewBag.Page+1,1,Model.Item2)">»</a>
             </div>
         </div>
+        }
+
     </div>
 </body>
 </html>

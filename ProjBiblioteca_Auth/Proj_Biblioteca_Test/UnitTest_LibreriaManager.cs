@@ -1,5 +1,4 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using Proj_Biblioteca.DAL;
 using Proj_Biblioteca.Data;
@@ -9,8 +8,6 @@ using Proj_Biblioteca.Utils;
 using Proj_Biblioteca.ViewModels;
 using System.Data;
 using System.Linq.Expressions;
-using System.Linq;
-using static NuGet.Packaging.PackagingConstants;
 
 namespace Proj_Biblioteca_Test
 {

@@ -36,25 +36,38 @@
     {
             UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel(){Nome="NULL",Email="NULL",Ruolo="NULL"});
         <div class="AccountPage">
-            <span>
-                <strong>Benvenuto, @UtenteLoggato.Nome </strong>
-                <button class="disconnect">Disconnettiti </button>
-                <button class="delete">Elimina Account</button>
-                @if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
-                {
-                    <button class="ruoli" id="gestisciRuoli" onclick="window.location.href='/Utenti/GestioneRuoli'">Gestisci Ruoli</button>
-                }
-            </span>
-            <br /><br />
-            <h3>Prenotazioni</h3>
-            <br /><hr />
+            <div class="topPage">
+                    <strong>Benvenuto, @UtenteLoggato.Nome </strong>
+                    <div class="buttons">
+                        <button class="disconnect">Disconnettiti </button>
+                        <button class="delete">Elimina Account</button>
+                        @if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
+                        {
+                            <button class="ruoli" id="gestisciRuoli" onclick="window.location.href='/Utenti/GestioneRuoli'">Gestisci Ruoli</button>
+                        }
+                    </div>
+            </div>
+            <div class="innerPage">
+                <h3>Prenotazioni</h3>
+                <br /><hr/><br />
+            <div style="font-size:10px;">
+                   <label>Time Format</label>
+                   <div>
+                        <input id="utc-tf" type="radio" name="tf" value="utc" checked />
+                        <label for="utc">UTC</label>
+                   </div>
+                   <div>
+                       <input id="local-tf" type="radio" name="tf" value="local" />
+                       <label for="local">Local [wip]</label>
+                   </div>
+            </div>
                 @if (Model != null && Model.Item1.Count() > 0)
             {
                 if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
                 {
                     <div class="prenotazioni">
                             <form method="get" action="/Utenti/AccountPage/" class="searchbar">
-                                <input type="text" name="search" id="search" placeholder="e-mail.." />
+                                <input type="text" name="search" id="search" placeholder="e-mail.." value="@(ViewBag.Search??"")" />
                                 <button type="submit" id="submitSearch">Cerca</button>
                             </form>
                             <br />
@@ -146,6 +159,7 @@
             {
                 <h4>Nessuna Prenotazione.</h4>
             }
+            </div>
         </div>
     }
     else // Login/Registrazione quando non c'è account loggato

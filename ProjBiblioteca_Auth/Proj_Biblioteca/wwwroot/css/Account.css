@@ -6,6 +6,8 @@
     align-items: center
 }
 
+
+
 .FormAccesso, .FormRegistrazione {
     margin-top: 5%;
     display: flex;
@@ -41,11 +43,36 @@ a:hover{
 }
 
 .AccountPage{
-    border-radius:4px;
-    padding:50px;
     min-height:70vh;
     background-color:white;
+    border-radius:5px;
 }
+.topPage {
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:10px;
+    padding:20px;
+    color: white;
+    background-color: #a5001c;
+    border-radius:5px 5px 0 0;
+}
+    .topPage .buttons button{
+        font-size:12px;
+        background-color:white;
+        border:none;
+        padding:3px;
+    } .topPage .buttons button:hover{
+          cursor:pointer;
+          background-color:#808080;
+      }
+
+
+.innerPage{
+    padding:10px;
+}
+
+
 
 .prenotazioni, .utenti{
     display: flex;
@@ -71,7 +98,7 @@ a:hover{
     }
 
 .FormAccesso button, .FormRegistrazione button{
-    background-color:cornflowerblue;
+    background-color:#9d0d0d;
     color:white;
     padding:5px;
     border-radius:3px;
@@ -80,12 +107,16 @@ a:hover{
     border:none;
     width:80%;
 }
+    .FormAccesso button:hover, .FormRegistrazione button:hover {
+        cursor: pointer;
+        background-color: #7c0a0a;
+    }
 
-.FormAccesso label, .FormRegistrazione label{
-    font-size:14px;
-    margin-top:10px;
-    margin-bottom:0;
-}
+    .FormAccesso label, .FormRegistrazione label {
+        font-size: 14px;
+        margin-top: 10px;
+        margin-bottom: 0;
+    }
 
 .FormAccesso input, .FormRegistrazione input{
     background-color:gainsboro;
@@ -145,7 +176,7 @@ a:hover{
         text-decoration: none;
     }
 .Pagina.paginaCorrente {
-    background-color: cadetblue;
+    background-color: #b20926;
 }
     .Pagina.paginaCorrente a {
         color: white;
