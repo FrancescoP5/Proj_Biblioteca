@@ -1,34 +1,46 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
-using System.Text;
 using System.Text.Encodings.Web;
-using System.Threading.Tasks;
 
 namespace Proj_Biblioteca_Test.IntegrationTests.Helpers
 {
-    public class TestAuthHandler : AuthenticationHandler<AuthenticationSchemeOptions>
+    public class TestAuthHandlerOptions : AuthenticationSchemeOptions
     {
-        public TestAuthHandler(IOptionsMonitor<AuthenticationSchemeOptions> options,
+        public string DefaultUserId { get; set; } = null!;
+    }
+    public class TestAuthHandler : AuthenticationHandler<TestAuthHandlerOptions>
+    {
+        public const string UserId = "UserId";
+
+        public const string AuthenticationScheme = "Test";
+        private readonly string _defaultUserId;
+
+        public TestAuthHandler(IOptionsMonitor<TestAuthHandlerOptions> options,
             ILoggerFactory logger, UrlEncoder encoder)
             : base(options, logger, encoder)
         {
+            _defaultUserId = options.CurrentValue.DefaultUserId;
         }
 
         protected override Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            var claims = new[] { new Claim(ClaimTypes.Name, "Test user") };
-            var identity = new ClaimsIdentity(claims, "Test");
+            var claims = new[] 
+            { 
+                new Claim(ClaimTypes.NameIdentifier, _defaultUserId),
+                new Claim(ClaimTypes.Name, "Admin"),
+                new Claim(ClaimTypes.Role, "Admin")
+            };
+            var identity = new ClaimsIdentity(claims, AuthenticationScheme);
             var principal = new ClaimsPrincipal(identity);
-            var ticket = new AuthenticationTicket(principal, "TestScheme");
+            var ticket = new AuthenticationTicket(principal, AuthenticationScheme);
 
             var result = AuthenticateResult.Success(ticket);
 
             return Task.FromResult(result);
         }
     }
+
+
 }

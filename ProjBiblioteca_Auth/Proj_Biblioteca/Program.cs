@@ -48,6 +48,12 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
 });
 
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Utenti/AccountPage";
+    options.LogoutPath= "/Utenti/AccountPage";
+});
+
 builder.Services.AddScoped<IRepoUtenti, RepoUtenti>();
 builder.Services.AddScoped<IRepoLibri, RepoLibri>();
 builder.Services.AddScoped<IRepoPrenotazioni, RepoPrenotazioni>();
