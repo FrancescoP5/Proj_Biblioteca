@@ -9,7 +9,7 @@ using Proj_Biblioteca.ViewModels;
 using System.Data;
 using System.Linq.Expressions;
 
-namespace Proj_Biblioteca_Test
+namespace Proj_Biblioteca_Test.UnitTests
 {
     internal class Manager
     {
@@ -74,7 +74,7 @@ namespace Proj_Biblioteca_Test
         [TestMethod]
         public void Test_Lettura()
         {
-            var libri = libreriaManager.Libri().Elenco(null,null).Result;
+            var libri = libreriaManager.Libri().Elenco(null, null).Result;
 
             Assert.IsNotNull(libri);
             Assert.AreEqual(2, libri.Item1.Count());
@@ -110,7 +110,7 @@ namespace Proj_Biblioteca_Test
         {
             var prenotazione = new Prenotazione() { ID = 101, DDF = DateTime.UtcNow, DDI = DateTime.UtcNow, UtenteId = "user123", LibroID = 2 };
 
-            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() {IdLibro = prenotazione.LibroID, IdUtente = prenotazione.UtenteId, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
+            CodiceStato codice = libreriaManager.Prenotazioni().AggiungiPrenotazione(new AddPrenotazioneViewModel() { IdLibro = prenotazione.LibroID, IdUtente = prenotazione.UtenteId, Inizio = prenotazione.DDI.ToString(), Fine = prenotazione.DDF.ToString(), TimeOffset = 0, ClientTime = 0 }).Result;
             Assert.AreEqual(CodiceStato.Ok, codice);
         }
 
@@ -137,12 +137,12 @@ namespace Proj_Biblioteca_Test
         [
             new Utente { Id = "user123", UserName = "John Doe", Email = "user@example.com" , PasswordHash="Esempio" }
         ];
-        
+
         public FakeRepoUtenti()
         {
-            foreach(var utente in _utenti)
+            foreach (var utente in _utenti)
             {
-                utente.PasswordHash = Encryption.HashPassword(utente.PasswordHash??"", utente);
+                utente.PasswordHash = Encryption.HashPassword(utente.PasswordHash ?? "", utente);
             }
         }
 
@@ -158,7 +158,7 @@ namespace Proj_Biblioteca_Test
 
         public Task<IdentityUserRole<string>?> GetUserRole(string id)
         {
-            return Task.FromResult(new IdentityUserRole<string> { RoleId = "utente" } ?? null ); // Simuliamo che l'utente abbia sempre il ruolo di Admin
+            return Task.FromResult(new IdentityUserRole<string> { RoleId = "utente" } ?? null); // Simuliamo che l'utente abbia sempre il ruolo di Admin
         }
 
         public Task<Role?> GetRuolo(string ruoloId)
@@ -172,7 +172,7 @@ namespace Proj_Biblioteca_Test
             Utente? utente = _utenti.FirstOrDefault(u => u.Email == email);
             if (utente == null) return Task.FromResult((Utente?)null);
 
-            var verifica = Encryption.VerifyPassword(password,utente);
+            var verifica = Encryption.VerifyPassword(password, utente);
             if (verifica == "Verificato") return Task.FromResult((Utente?)utente);
 
             return Task.FromResult((Utente?)null);
@@ -181,7 +181,7 @@ namespace Proj_Biblioteca_Test
         public Task<bool> InsertByCredentials(string nome, string email, string password)
         {
             Utente utente = new() { Id = Guid.NewGuid().ToString(), UserName = nome, Email = email, PasswordHash = password };
-            utente.PasswordHash = Encryption.HashPassword(password,utente);
+            utente.PasswordHash = Encryption.HashPassword(password, utente);
             _utenti.Add(utente);
             return Task.FromResult(true);
         }

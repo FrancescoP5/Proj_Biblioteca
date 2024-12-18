@@ -38,4 +38,10 @@
     <EditorConfigFiles Remove="C:\Users\franc\Desktop\desk\Repo\Proj_Biblioteca\ProjBiblioteca_Auth\Proj_Biblioteca\.editorconfig" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Update="appsettings.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

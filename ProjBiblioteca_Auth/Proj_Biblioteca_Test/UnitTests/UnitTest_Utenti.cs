@@ -2,7 +2,7 @@
 using Proj_Biblioteca.ViewModels;
 
 
-namespace Proj_Biblioteca_Test
+namespace Proj_Biblioteca_Test.UnitTests
 {
     [TestClass]
     public class UnitTest_Utenti
@@ -36,7 +36,7 @@ namespace Proj_Biblioteca_Test
 
 
             Assert.AreEqual(Email_ExpectedOutput, Email_Output, "UtenteViewModel Email diverse.");
-           
+
         }
 
 

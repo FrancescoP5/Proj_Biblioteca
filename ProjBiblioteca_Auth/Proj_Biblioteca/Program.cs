@@ -103,3 +103,5 @@ app.MapControllerRoute(name: "default", pattern: "{controller=Libro}/{action=Ele
 
 app.Run();
 
+public partial class Program() { }
+

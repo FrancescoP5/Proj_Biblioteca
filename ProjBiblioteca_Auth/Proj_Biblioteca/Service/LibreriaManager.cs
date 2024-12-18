@@ -251,7 +251,6 @@ namespace Proj_Biblioteca.Service
             
         }
 
-
         public async Task<Libro?> FindLibro(int? id)
         {
             return await _repoLibri.GetAsync(l=>l.ID == (id??0));
