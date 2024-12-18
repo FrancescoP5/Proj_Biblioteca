@@ -1,12 +1,15 @@
-﻿.prenotazione,.modifica, .aggiungi{
+﻿.container{
+    padding-top:100px;
+}
+.prenotazione,.modifica, .aggiungi{
+    background-color:white;
     display: flex;
     flex-direction:column;
-    align-content: center;
     padding: 50px;
     margin: auto;
-    min-width: fit-content;
-    max-width: 80vw;
-    box-shadow: 0 0 10px black;
+    width: fit-content;
+    min-width:60vw;
+    border-radius:10px;
 }
 
 .modifica > form{

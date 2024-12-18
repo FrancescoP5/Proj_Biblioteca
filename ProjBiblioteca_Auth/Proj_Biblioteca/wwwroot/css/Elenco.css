@@ -1,11 +1,14 @@
-﻿.Elenco{
-    display:flex;
-    justify-content:center;
-    padding:100px 0;
-    margin: auto;
-    min-width:fit-content;
-    max-width:80vw;
-    box-shadow: 0 0 10px black;
+﻿.Elenco {
+    display: flex;
+    flex-direction:column;
+    justify-content: center;
+    margin: 0 auto;
+    min-width: fit-content;
+    max-width: 60vw;
+    padding-top:50px;
+    padding:0 10px;
+    background: #1a1a1aaa;
+    backdrop-filter:contrast(120%) saturate(160%) blur(8px);
 }
 
 .Libri{
@@ -14,29 +17,47 @@
     gap:40px;
 }
 
-.Libro{
-    width:200px;
-    height:350px;
-    padding:10px;
-    background-color: antiquewhite;
-    gap:4px;
-    border: 1px solid black;
+.Libro {
+    color: white;
+    font-family: Calibri;
+    width: 200px;
+    height: 350px;
+    padding: 10px;
+    background-color: #693218;
+    gap: 4px;
+    border-radius: 3px 0px 0px 5px;
+    border-left: 10px solid #3e2215;
+    border-bottom: 4px ridge white;
+    border-right: 2px ridge white;
+
 }
-    .Libro:hover{
-        box-shadow:0px 0px 4px black;
-    }
+
 
 .Libro.NonDisponibile{
+   color:lightgray;
    background-color:gray;
+   border-left-color:black;
 }
     .Libro.NonDisponibile:hover {
         box-shadow:unset;
     }
 
-.Libro .Titolo{
-    display:flex;
-    justify-content:center;
-}
+    .Libro .Titolo {
+        max-width: 200px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        display: flex;
+        justify-content: center;
+    }
+
+    .Libro .Autore {
+        max-width: 200px;
+        display: inline-block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
 
 .Img{
     display:flex;
@@ -44,8 +65,57 @@
 }
 
 .Img img{
+    margin:5px;
     width:60%;
     aspect-ratio:9/16;
 }
 
+.action {
+    display: flex;
+    justify-content: space-evenly;
+    margin-top:20px;
+}
+.action a{
+    border-radius:10%;
+    color:white;
+    text-decoration:none;
+    font-size:13px;
+    padding:6px;
+    background-color:#3e2215;
+}
+    .action a:hover {
+        background-color: #301d14;
+    }
+
+.Pagine {
+    display: flex;
+    width: fit-content;
+    border: 1px solid;
+    margin-top: 10px;
+    border-radius: 3px;
+    background-color: #9d0d0d;
+}
+
+.Pagina {
+    padding: 6px;
+    border-left: 1px solid;
+    font-size: 15px;
+}
+
+    .Pagina:nth-child(1) {
+        border-left: 0px;
+    }
+
+    .Pagina a {
+        color: white;
+        text-decoration: none;
+    }
+
+    .Pagina.paginaCorrente {
+        background-color: #5a1313;
+    }
+
+        .Pagina.paginaCorrente a {
+            color: white;
+        }
 

@@ -396,3 +396,4 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+/ProjBiblioteca_Auth/Proj_Biblioteca/.editorconfig

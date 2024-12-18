@@ -4,7 +4,7 @@
 @using Proj_Biblioteca.Controllers
 @using Proj_Biblioteca.Models
 @using Proj_Biblioteca.ViewModels
-@model IEnumerable<Libro>
+@model Tuple<IEnumerable<Libro>,int>
 
 <!DOCTYPE html>
 <html>
@@ -14,9 +14,18 @@
     <link href="~/css/Elenco.css" rel="stylesheet" />
 </head>
 <body>
+    @{
+        string urlBase = "/Libro/Elenco/?";
+        string urlCurrentSearch = $"&search={ViewBag.Search??string.Empty}";
+        string urlCurrentPage = $"&page={ViewBag.Page??1}";
+    }
     <div class="Elenco">
+
+        @if(Model.Item1.Count()<=0 || Model.Item2 <=0){
+        <h3 style="color:white; margin-top:20px; padding: 50px;">Nessun Risultato..</h3>
+        }
         <div class="Libri">
-            @foreach(Libro item in Model)
+            @foreach(Libro item in Model.Item1)
             {
                 UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel() {Nome = "NULL", Email = "NULL", Ruolo="NULL" });
 
@@ -29,22 +38,42 @@
                     <span class="Autore">@item.Autore</span>
                     <br /><br />
 
-                    @if(item.Disponibilita > 0)
-                    {
-                        @Html.ActionLink("Prenota", "Prenota", "Prenotazioni",new{idLibro = item.ID})
-                    }
-                    else
-                    {
-                        <span>Non Disponibile</span>
-                    }
+                    <div class="action">
+                        @if(item.Disponibilita > 0)
+                        {
+                            @Html.ActionLink("Prenota", "Prenota", "Prenotazioni",new{idLibro = item.ID})
+                        }
+                        else
+                        {
+                            <span>Non Disponibile</span>
+                        }
 
-                    @if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
-                    {
-                        @Html.ActionLink("Modifica", "Modifica", "Libro", new { id = item.ID })
-                    }
+                        @if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
+                        {
+                            @Html.ActionLink("Modifica", "Modifica", "Libro", new { id = item.ID })
+                        }
+                    </div>
                 </div>
             }
         </div>
+        @if (Model.Item2 > 0)
+        {
+            <div class="Pagine">
+                <div class="Pagina prev">
+                    <a href="@(urlBase+urlCurrentSearch)&page=@Math.Clamp(ViewBag.Page-1,1,Model.Item2)">«</a>
+                </div>
+                @for (int i = 0; i < Model.Item2; i++)
+                {
+                    <div class="Pagina @(i+1 == (Math.Max(ViewBag.Page,1)) ? $"paginaCorrente":"")" id="@(i+1)">
+                        <a href="@(urlBase+urlCurrentSearch)&page=@(i+1)">@(i + 1)</a>
+                    </div>
+                }
+                <div class="Pagina next">
+                    <a href="@(urlBase+urlCurrentSearch)&page=@Math.Clamp(ViewBag.Page+1,1,Model.Item2)">»</a>
+            </div>
+        </div>
+        }
+
     </div>
 </body>
 </html>

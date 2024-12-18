@@ -1,23 +1,31 @@
-﻿.Accesso,.Registrazione{
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center
+﻿.Accesso, .Registrazione {
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center
 }
 
-.FormAccesso,.FormRegistrazione{
+
+
+.FormAccesso, .FormRegistrazione {
+    margin-top: 5%;
     display: flex;
-    flex-direction:column;
-    align-items:center;
-    width: 200px;
-    height: 200px;
-    padding:20px;
+    flex-direction: column;
+    align-items: center;
+    min-width: 200px;
+    min-height: 200px;
+    padding: 20px;
     box-shadow: 0 0 10px black;
-    gap:10px;
+    gap: 10px;
+    border-radius: 10px;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: saturate(180%) blur(10px);
 }
 
 a{
     text-decoration:underline;
+    color:orchid;
 }
 
 a:hover{
@@ -27,6 +35,43 @@ a:hover{
 .hidden{
     display:none;
 }
+
+.container {
+    display: flex;
+    justify-content: center;
+    padding:5% 0;
+}
+
+.AccountPage{
+    min-height:70vh;
+    background-color:white;
+    border-radius:5px;
+}
+.topPage {
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start;
+    gap:10px;
+    padding:20px;
+    color: white;
+    background-color: #a5001c;
+    border-radius:5px 5px 0 0;
+}
+    .topPage .buttons button{
+        font-size:12px;
+        background-color:white;
+        border:none;
+        padding:3px;
+    } .topPage .buttons button:hover{
+          cursor:pointer;
+          background-color:#808080;
+      }
+
+
+.innerPage{
+    padding:10px;
+}
+
 
 
 .prenotazioni, .utenti{
@@ -52,12 +97,37 @@ a:hover{
         word-break:break-word;
     }
 
+.FormAccesso button, .FormRegistrazione button{
+    background-color:#9d0d0d;
+    color:white;
+    padding:5px;
+    border-radius:3px;
+    margin-top:20px;
+    margin-bottom:10px;
+    border:none;
+    width:80%;
+}
+    .FormAccesso button:hover, .FormRegistrazione button:hover {
+        cursor: pointer;
+        background-color: #7c0a0a;
+    }
 
+    .FormAccesso label, .FormRegistrazione label {
+        font-size: 14px;
+        margin-top: 10px;
+        margin-bottom: 0;
+    }
+
+.FormAccesso input, .FormRegistrazione input{
+    background-color:gainsboro;
+    border:1px solid #808080;
+    border-radius:3px;
+    margin:0;
+}
 
 .table-columns{
     font-weight:bold;
 }
-
 
 .success:after{
     content: "Successo!";
@@ -65,3 +135,50 @@ a:hover{
 .error:after{
     content:"Errore!";
 }
+
+
+
+.tipOrd{
+    font-size: 20px;
+    display: flex;
+    width: 20px;
+    height: 20px;
+}
+
+.none::after{
+    content:"-";
+}
+
+.order::after {
+    content: "˅";
+}
+
+.order_desc::after {
+    content: "˄";
+}
+
+.Pagine {
+    display: flex;
+    width: fit-content;
+    border: 1px solid;
+    margin-top:3px;
+    border-radius:4px;
+}
+.Pagina {
+    padding:5px;
+    border-left: 1px solid;
+    font-size:13px;
+} .Pagina:nth-child(1){
+      border-left:0px;
+  }
+    .Pagina a {
+        color: black;
+        text-decoration: none;
+    }
+.Pagina.paginaCorrente {
+    background-color: #b20926;
+}
+    .Pagina.paginaCorrente a {
+        color: white;
+    }
+

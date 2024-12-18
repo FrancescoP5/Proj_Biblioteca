@@ -2,7 +2,7 @@
 @using Proj_Biblioteca.Controllers;
 @using Proj_Biblioteca.Models;
 @using Proj_Biblioteca.ViewModels
-@model IEnumerable<Prenotazione>
+@model Tuple<IEnumerable<Prenotazione>,int>
 
 @{
     Layout = "_Layout";
@@ -15,116 +15,159 @@
     <link href="~/css/Account.css" rel="stylesheet"/>
 </head>
 <body>
+    @{
+        string urlBase = "/Utenti/AccountPage/?";
+        string urlCurrentSearch = $"&search={ViewBag.Search ?? string.Empty}";
+        string urlCurrentPage = $"&page={ViewBag.Page ?? 1}";
+        string urlCurrentOrder = ViewBag.ordinaDDI != -1 ? $"&ordinaDDI={ViewBag.ordinaDDI}" : 
+                                 ViewBag.ordinaDDF != -1 ? $"&ordinaDDF={ViewBag.ordinaDDF}" : 
+                                 "";
+
+        string classDDI = ViewBag.ordinaDDI == -1 ? "none": ViewBag.ordinaDDI == 0 ? "order_desc" : "order";
+        string classDDF = ViewBag.ordinaDDF == -1 ? "none": ViewBag.ordinaDDF == 0 ? "order_desc" : "order";
+
+        string nextDDI = ViewBag.ordinaDDI == -1 ? "0" : ViewBag.ordinaDDI == 0 ? "1" : "-1";
+        string nextDDF = ViewBag.ordinaDDF == -1 ? "0" : ViewBag.ordinaDDF == 0 ? "1" : "-1";
+    }
+    <div class="container">
+
     <div class="jsAntiForgeryToken" >@Html.AntiForgeryToken()</div>
     @if(ViewData["Utente"]!=null) //Pagina account effettiva
     {
-
-
-
-        UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel(){Nome="NULL",Email="NULL",Ruolo="NULL"});
-
-
-
-        <span>
-            <strong>Benvenuto, @UtenteLoggato.Nome </strong>
-            <button class="disconnect">Disconnettiti </button>
-            <button class="delete">Elimina Account</button>
-            @if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
-            {
-                <button class="ruoli" id="gestisciRuoli" onclick="window.location.href='/Utenti/GestioneRuoli'">Gestisci Ruoli</button>
-            }
-        </span>
-        <br /><br />
-        <h3>Prenotazioni</h3>
-        <br /><hr />
-        if (Model != null && Model.Count()>0)
-        {
-            if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
-            {
-                <div class="prenotazioni">
-                    <table class="table">
-                        <tr class="table-columns">
-                            <th>ID</th>
-                            <th>Titolo</th>
-                            <th>ISBN</th>
-                            <th>Data di Prenotazione</th>
-                            <th>Data di Restituzione</th>
-                            <th>Utente</th>
-                            <th>Elimina Prenotazione</th>
-
-                        </tr>
-                        @foreach (Prenotazione prenotazione in Model)
+            UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel(){Nome="NULL",Email="NULL",Ruolo="NULL"});
+        <div class="AccountPage">
+            <div class="topPage">
+                    <strong>Benvenuto, @UtenteLoggato.Nome </strong>
+                    <div class="buttons">
+                        <button class="disconnect">Disconnettiti </button>
+                        <button class="delete">Elimina Account</button>
+                        @if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
                         {
-
-                                
-                            <tr class="table-values">
-                                <th>@((prenotazione?? new Prenotazione()).ID)</th>
-                                <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).Titolo)</th>
-                                <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).ISBN)</th>
-                                <th>@((prenotazione ?? new Prenotazione()).DDI.ToString("yyyy-MM-dd HH:mm"))</th>
-                                <th>@((prenotazione ?? new Prenotazione()).DDF.ToString("yyyy-MM-dd HH:mm"))</th>
-                                <th>@(((prenotazione ?? new Prenotazione()).UtenteViewModel ?? new UtenteViewModel() { Email = "NULL", Nome = "NULL", Ruolo = "NULL" }).Email)</th>
-                                <th>
-                                    <form onsubmit="return false">
-
-                                        <input value="@((prenotazione?? new Prenotazione()).ID)" name="id" hidden readonly />
-                                        <button class="RimuoviPrenotazione" type="submit">X</button>
-                                    </form>
-                                </th>
-                            </tr>
-                            
+                            <button class="ruoli" id="gestisciRuoli" onclick="window.location.href='/Utenti/GestioneRuoli'">Gestisci Ruoli</button>
                         }
-                    </table>
+                    </div>
+            </div>
+            <div class="innerPage">
+                <h3>Prenotazioni</h3>
+                <br /><hr/><br />
+            <div style="font-size:10px;">
+                   <label>Time Format</label>
+                   <div>
+                        <input id="utc-tf" type="radio" name="tf" value="utc" checked />
+                        <label for="utc">UTC</label>
+                   </div>
+                   <div>
+                       <input id="local-tf" type="radio" name="tf" value="local" />
+                       <label for="local">Local [wip]</label>
+                   </div>
+            </div>
+                @if (Model != null && Model.Item1.Count() > 0)
+            {
+                if (UtenteLoggato != null && UtenteLoggato.Ruolo == "Admin")
+                {
+                    <div class="prenotazioni">
+                            <form method="get" action="/Utenti/AccountPage/" class="searchbar">
+                                <input type="text" name="search" id="search" placeholder="e-mail.." value="@(ViewBag.Search??"")" />
+                                <button type="submit" id="submitSearch">Cerca</button>
+                            </form>
+                            <br />
+                        <table class="table">
+                            <tr class="table-columns">
+                                <th>ID</th>
+                                <th>Titolo</th>
+                                <th>ISBN</th>
+                                    <th class="ddi"><a class="ordine" href="@(urlBase+urlCurrentSearch+urlCurrentPage)&ordinaDDI=@(nextDDI)">Data di Prenotazione</a><div class="tipOrd @(classDDI)"></div></th>
+                                    <th class="ddf"><a class="ordine" href="@(urlBase+urlCurrentSearch+urlCurrentPage)&ordinaDDF=@(nextDDF)">Data di Restituzione</a><div class="tipOrd @(classDDF)"></div></th>
+                                <th>Utente</th>
+                                <th>Elimina Prenotazione</th>
+
+                            </tr>
+                            @foreach (Prenotazione prenotazione in Model.Item1)
+                            {
+
+                                string utcDateDDI = prenotazione.DDI.ToString("dd/MM/yyyy");
+                                string utcDateDDF = prenotazione.DDF.ToString("dd/MM/yyyy");
+                                <tr class="table-values">
+                                    <th>@((prenotazione?? new Prenotazione()).ID)</th>
+                                    <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).Titolo)</th>
+                                    <th>@(((prenotazione?? new Prenotazione()).Libro ?? new Libro()).ISBN)</th>
+                                    <th class="toLocalDate" data-utcdate="@(utcDateDDI)">@(utcDateDDI)UTC</th>
+                                    <th class="toLocalDate" data-utcdate="@(utcDateDDF)">@(utcDateDDF)UTC</th>
+                                    <th>@(((prenotazione ?? new Prenotazione()).UtenteViewModel ?? new UtenteViewModel() { Email = "NULL", Nome = "NULL", Ruolo = "NULL" }).Email)</th>
+                                    <th>
+                                        <form onsubmit="return false">
+
+                                            <input value="@((prenotazione?? new Prenotazione()).ID)" name="id" hidden readonly />
+                                            <button class="RimuoviPrenotazione" type="submit">X</button>
+                                        </form>
+                                    </th>
+                                </tr>
+                            
+                            }
+                        </table>
+                        <div class="Pagine">
+                            <div class="Pagina prev">
+                                    <a href="@(urlBase+urlCurrentSearch+urlCurrentOrder)&page=@Math.Clamp(ViewBag.Page-1,1,Model.Item2)">«</a>
+                            </div>
+                            @for (int i = 0; i < Model.Item2; i++)
+                            {
+                                <div class="Pagina @(i+1 == (Math.Max(ViewBag.Page,1)) ? $"paginaCorrente":"")" id="@(i+1)">
+                                    <a href="@(urlBase+urlCurrentSearch+urlCurrentOrder)&page=@(i+1)">@(i + 1)</a>
+                                </div>
+                            }
+                            <div class="Pagina next">
+                                    <a href="@(urlBase+urlCurrentSearch+urlCurrentOrder)&page=@Math.Clamp(ViewBag.Page+1,1,Model.Item2)">»</a>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="prenotazioni">
+                        <table class="table">
+                            <tr class="table-columns">
+                                <th>Titolo</th>
+                                <th>Autore</th>
+                                <th>ISBN</th>
+                                <th>Data di Prenotazione</th>
+                                <th>Data di Restituzione</th>
+                                <th>Elimina Prenotazione</th>
+                            </tr>
+                            @foreach (Prenotazione prenotazione in Model.Item1)
+                            {
+                                string utcDateDDI = prenotazione.DDI.ToString("dd/MM/yyyy");
+                                string utcDateDDF = prenotazione.DDF.ToString("dd/MM/yyyy");
+                                <tr class="table-values">
+                                    <th>@((prenotazione.Libro ?? new Libro()).Titolo)</th>
+                                    <th>@((prenotazione.Libro ?? new Libro()).Autore)</th>
+                                    <th>@((prenotazione.Libro ?? new Libro()).ISBN)</th>
+                                    <th class="toLocalDate" data-utcdate="@(utcDateDDI)">@(utcDateDDI)UTC</th>
+                                    <th class="toLocalDate" data-utcdate="@(utcDateDDF)">@(utcDateDDF)UTC</th>
+                                    <th>
+                                        <form onsubmit="return false">
+                                            <input value="@(prenotazione.ID)" name="id" hidden readonly/>
+                                            <button class="RimuoviPrenotazione" type="submit">X</button>
+                                        </form>
+                                    </th>
+                                </tr>
+                            }
+                        </table>
                 </div>
-
-
+                }
             }
             else
             {
-                
-            <div class="prenotazioni">
-                <table class="table">
-                    <tr class="table-columns">
-                        <th>Titolo</th>
-                        <th>Autore</th>
-                        <th>ISBN</th>
-                        <th>Data di Prenotazione</th>
-                        <th>Data di Restituzione</th>
-                        <th>Elimina Prenotazione</th>
-                    </tr>
-                @foreach(Prenotazione prenotazione in Model)
-                {
-                        <tr class="table-values">
-                            <th>@((prenotazione.Libro??new Libro()).Titolo)</th>
-                            <th>@((prenotazione.Libro ?? new Libro()).Autore)</th>
-                            <th>@((prenotazione.Libro ?? new Libro()).ISBN)</th>
-                            <th>@(prenotazione.DDI.ToString("yyyy-MM-dd HH:mm"))</th>
-                            <th>@(prenotazione.DDF.ToString("yyyy-MM-dd HH:mm"))</th>
-                            <th>
-                                    <form onsubmit="return false">
-                                <input value="@(prenotazione.ID)" name="id" hidden readonly/>
-                                        <button class="RimuoviPrenotazione" type="submit">X</button>
-                                </form>
-                            </th>
-                        </tr>
-                    
-                }
-                </table>
-            </div>
+                <h4>Nessuna Prenotazione.</h4>
             }
-        }
-        else
-        {
-            <h4>Nessuna Prenotazione.</h4>
-        }
+            </div>
+        </div>
     }
     else // Login/Registrazione quando non c'è account loggato
     {
-        <div class="Accesso" id="FormAccesso">
-            <h2 class="Titolo">Accesso</h2>
-            <br />
-
+        string classeLogin = (bool)(ViewData["IsRegistrazione"] ?? false) ? "Accesso hidden" : "Accesso";
+        <div class="@(classeLogin)" id="FormAccesso">
             <form class="FormAccesso" id="loginForm" action="/Utenti/Login" method="post">
+                <h2 class="Titolo">Accesso</h2>
                 @Html.AntiForgeryToken()
                 <label>Email:</label>
                 <input type="email" id="email" name="email" placeholder="example@example.com" required/>
@@ -132,22 +175,20 @@
                 <input type="password" id="password" name="password" placeholder="password" required/>
                 <button type="submit">Login</button>
             </form>
-
-            <br />
-            @if (ViewData["Messaggio"]!=null)
-            {
-                <span class="erroreLogin">@((ViewData["Messaggio"]??"Null").ToString())</span><br />
-            }
-                
-            
+                <br />
+                @if (ViewData["Messaggio"]!=null)
+                {
+                    <span class="erroreLogin">@((ViewData["Messaggio"]??"Null").ToString())</span><br />
+                }
                 <span>Non hai un account? <a onclick="FormRegistrazione()">Registrati.</a></span>
+
         </div>
 
-        <div class="Registrazione hidden" id="FormRegistrazione" >
-            <h2 class="Titolo">Registrazione</h2>
-            <br />
+        string classeRegistrazione = (bool)(ViewData["IsRegistrazione"] ?? false) ? "Registrazione" : "Registrazione hidden";
+        <div class="@(classeRegistrazione)" id="FormRegistrazione">
 
             <form class="FormRegistrazione" id="registrationForm" action="/Utenti/Registrazione" method="post">
+                <h2 class="Titolo">Registrazione</h2>
                 @Html.AntiForgeryToken()
                 <label>Nome:</label>
                 <input type="text" id="nomeReg" name="nome" placeholder="Nome" required />
@@ -155,16 +196,25 @@
                 <input type="email" id="emailReg" name="email" placeholder="example@example.com" required />
                 <label>Password:</label>
                 <input type="password" id="passwordReg" name="password" placeholder="password" required />
+                <label>Conferma Password:</label>
+                <input type="password" id="passwordConfermaReg" name="confermaPassword" placeholder="password" required />
                 <button type="submit">Registrati</button>
             </form>
+                <br />
+                @if (ViewData["Messaggio"] != null)
+                {
+                    <span class="erroreLogin">@((ViewData["Messaggio"] ?? "Null").ToString())</span>
 
-            <br />
+                    <br />
+                }
+                <span>Hai un account? <a onclick="FormLogin()">Accedi.</a></span>
 
 
-            <span>Hai un account? <a onclick="FormLogin()">Accedi.</a></span>
+
 
         </div>
     }
+    </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="~/js/Account.js"></script>
 </body>

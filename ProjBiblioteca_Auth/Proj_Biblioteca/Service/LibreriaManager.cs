@@ -4,8 +4,10 @@ using Proj_Biblioteca.DAL;
 using Proj_Biblioteca.Models;
 using Proj_Biblioteca.Utils;
 using Proj_Biblioteca.ViewModels;
+using System.Linq.Expressions;
 using System.Net.Mail;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
 
 namespace Proj_Biblioteca.Service
 {
@@ -38,23 +40,15 @@ namespace Proj_Biblioteca.Service
     /// Classe di accesso a tutti i servizi di gestione della libreria
     /// <br/> <see cref="ILibreriaManager"/> <seealso cref="LibreriaManager"/>
     /// </summary>
-    public class LibreriaManager : ILibreriaManager
+    public class LibreriaManager(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti) : ILibreriaManager
     {
-
-        protected readonly IRepoPrenotazioni _repoPrenotazioni;
-        protected readonly IRepoLibri _repoLibri;
-        protected readonly IRepoUtenti _repoUtenti;
-
-        public LibreriaManager(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti)
-        {
-            _repoPrenotazioni = repoPrenotazioni;
-            _repoLibri = repoLibri;
-            _repoUtenti = repoUtenti;
-        }
+        protected readonly IRepoPrenotazioni _repoPrenotazioni = repoPrenotazioni;
+        protected readonly IRepoLibri _repoLibri = repoLibri;
+        protected readonly IRepoUtenti _repoUtenti = repoUtenti;
 
         public Utenti Utenti()
         {
-            return this as Utenti?? new(_repoPrenotazioni, _repoLibri, _repoUtenti);
+            return this as Utenti ?? new(_repoPrenotazioni, _repoLibri, _repoUtenti);
         }
         public Libri Libri()
         {
@@ -69,12 +63,8 @@ namespace Proj_Biblioteca.Service
     /// <summary>
     /// Classe di accesso ai servizi di gestione degli utenti 
     /// </summary>
-    public class Utenti: LibreriaManager
+    public class Utenti(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti) : LibreriaManager(repoPrenotazioni, repoLibri, repoUtenti)
     {
-        public Utenti(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti) : base(repoPrenotazioni, repoLibri, repoUtenti)
-        {
-        }
-
         public async Task<UtenteViewModel?> GetLoggedUser(ClaimsPrincipal User)
         {
             var id = User.Claims.FirstOrDefault()?.Value;
@@ -96,7 +86,7 @@ namespace Proj_Biblioteca.Service
             if (user == null)
                 return null;
             var ruoloID = (await _repoUtenti.GetUserRole(id))?.RoleId;
-            var ruolo = (await _repoUtenti.GetRuolo(ruoloID??""))?.Name;
+            var ruolo = (await _repoUtenti.GetRuolo(ruoloID ?? ""))?.Name;
 
             return new UtenteViewModel()
             {
@@ -119,7 +109,7 @@ namespace Proj_Biblioteca.Service
                     continue;
 
                 var ruoloID = (await _repoUtenti.GetUserRole(user!.Id))?.RoleId;
-                var ruolo = (await _repoUtenti.GetRuolo(ruoloID??""))?.Name;
+                var ruolo = (await _repoUtenti.GetRuolo(ruoloID ?? ""))?.Name;
 
                 utentiViewModel.Add(new UtenteViewModel()
                 {
@@ -134,15 +124,22 @@ namespace Proj_Biblioteca.Service
             return utentiViewModel;
         }
 
-        public async Task<IEnumerable<Prenotazione?>> PrenotazioniUtente(UtenteViewModel? utente)
+        public async Task<Tuple<IEnumerable<Prenotazione?>,int>> PrenotazioniUtente(UtenteViewModel? utente, int? page, string? search, int? ordinaDDI, int? ordinaDDF)
         {
+
+
             if (utente == null)
-                return Enumerable.Empty<Prenotazione>();
+                return new(Enumerable.Empty<Prenotazione>(),0);
 
             if (utente.Ruolo == "Admin")
-                return JsonConvert.DeserializeObject<IEnumerable<Prenotazione?>>(Encryption.Decrypt(await Prenotazioni().ElencoPrenotazioni())) ?? Enumerable.Empty<Prenotazione>();
+            {
+                var json = await Prenotazioni().ElencoPrenotazioni(page ?? 1, search, ordinaDDI, ordinaDDF);
 
-            return JsonConvert.DeserializeObject<IEnumerable<Prenotazione?>>(Encryption.Decrypt(await Prenotazioni().GetPrenotazioni(utente.Id??""))) ?? Enumerable.Empty<Prenotazione>(); ;
+                Tuple<IEnumerable<Prenotazione?>,int> prenotazioni = JsonConvert.DeserializeObject<Tuple<IEnumerable<Prenotazione?>, int>>(Encryption.Decrypt(json)) ?? new(Enumerable.Empty<Prenotazione>(),0);
+                return prenotazioni;
+            }
+
+            return new(JsonConvert.DeserializeObject<IEnumerable<Prenotazione?>>(Encryption.Decrypt(await Prenotazioni().GetPrenotazioni(utente.Id ?? ""))) ?? Enumerable.Empty<Prenotazione>(),0);
         }
 
         public async Task<bool> CambiaRuolo(string id, string ruolo)
@@ -158,18 +155,18 @@ namespace Proj_Biblioteca.Service
             }
             else
             {
-                return (await GetViewModels()).Where(u => u.Email.ToLower().Contains(email.ToLower())).ToList();
+                return (await GetViewModels()).Where(u => u.Email.Contains(email, StringComparison.CurrentCultureIgnoreCase)).ToList();
             }
         }
 
-        public async Task<string> Login(string email, string password)
+        public async Task<string> Login(LoginViewModel loginView)
         {
             string message = "Errore! Qualcosa è andato storto, riprovare..";
 
-            if (!MailAddress.TryCreate(email, out _))//check della validita email
+            if (!MailAddress.TryCreate(loginView.Email, out _))//check della validita email
                 return message;
 
-            Utente? utente = await _repoUtenti.GetByCredentials(email, Encryption.Encrypt(password));
+            Utente? utente = await _repoUtenti.GetByCredentials(loginView.Email, loginView.Password ?? "");
 
             if (utente != null)
             {
@@ -187,10 +184,20 @@ namespace Proj_Biblioteca.Service
 
         }
 
-        public async Task<string> Registrazione(string nome, string email, string password)
+        public async Task<string> Registrazione(RegistrazioneViewModel registrazioneView)
         {
-            if (await _repoUtenti.InsertByCredentials(nome, email, password))
-                return await Login(email, password);
+            if (registrazioneView.Password != registrazioneView.ConfermaPassword)
+                return "Attenzione, le password non corrispondono";
+
+            string passwordRGX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,200}$"; //Regex per la validazione di una password
+            if (!Regex.Match(registrazioneView.Password ?? "", passwordRGX).Success)
+                return "Errore password invalida";
+
+            if (!MailAddress.TryCreate(registrazioneView.Email, out _))
+                return "Errore email invalida";
+
+            if (await _repoUtenti.InsertByCredentials(registrazioneView.Nome ?? "", registrazioneView.Email, registrazioneView.Password ?? "")) 
+                return await Login(new LoginViewModel() { Email = registrazioneView.Email, Password = registrazioneView.Password});
 
             return "Errore! Registrazione fallita, riprovare..";
         }
@@ -214,29 +221,60 @@ namespace Proj_Biblioteca.Service
     /// <summary>
     /// Classe di accesso ai servizi di gestione dei libri
     /// </summary>
-    public class Libri: LibreriaManager
+    public class Libri(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti) : LibreriaManager(repoPrenotazioni, repoLibri, repoUtenti)
     {
-        public Libri(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti) : base(repoPrenotazioni, repoLibri, repoUtenti)
-        {
-        }
 
-        public async Task<IEnumerable<Libro?>> Elenco()
+        public async Task<Tuple<IEnumerable<Libro?>,int>> Elenco(int? page, string? search)
         {
-            return await _repoLibri.GetLibri();
+            int pageSize = 9;
+
+            page ??= 1;
+
+            IEnumerable<Libro?> libri = Enumerable.Empty<Libro>();
+
+            Expression<Func<Libro, bool>>? filter = null;
+
+            if (!string.IsNullOrEmpty(search))
+            {
+                filter = l => (l.Titolo ?? "").ToLower().Contains(search.ToLower());
+
+                libri = await _repoLibri.GetListAsync(filter, page, pageSize);
+            }
+            else
+            {
+                libri = await _repoLibri.GetListAsync(filter, page, pageSize);
+            }
+
+            int totalPages = await _repoLibri.PageCountAsync(pageSize, filter);
+
+            return new(libri,totalPages);
+            
         }
 
         public async Task<Libro?> FindLibro(int? id)
         {
-            return await _repoLibri.GetLibro(id ?? 0);
+            return await _repoLibri.GetAsync(l=>l.ID == (id??0));
         }
 
         public async Task<bool> Aggiungi(Libro libro)
         {
+            if ((libro.Titolo ?? "").Length > 300 || (libro.Autore ?? "").Length > 300)
+                return false;
+
+            if (libro.Disponibilita < 0 || libro.PrenotazioneMax < 0)
+                return false;
+
             return await _repoLibri.Insert(libro);
         }
 
         public async Task<bool> Aggiorna(Libro libro)
         {
+            if ((libro.Titolo??"").Length > 300 || (libro.Autore ?? "").Length > 300)
+                return false;
+
+            if (libro.Disponibilita < 0 || libro.PrenotazioneMax < 0)
+                return false;
+
             return await _repoLibri.Update(libro);
         }
 
@@ -254,22 +292,46 @@ namespace Proj_Biblioteca.Service
     /// <summary>
     /// Classe di accesso ai servizi di gestione delle prenotazioni
     /// </summary>
-    public class Prenotazioni : LibreriaManager
+    public class Prenotazioni(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti) : LibreriaManager(repoPrenotazioni, repoLibri, repoUtenti)
     {
-        public Prenotazioni(IRepoPrenotazioni repoPrenotazioni, IRepoLibri repoLibri, IRepoUtenti repoUtenti) : base(repoPrenotazioni, repoLibri, repoUtenti)
+        public async Task<string> ElencoPrenotazioni(int page, string? search, int? ordinaDDI, int? ordinaDDF)
         {
-        }
+            int pageSize = 5;
 
-        public async Task<string> ElencoPrenotazioni()
-        {
-            IEnumerable<Prenotazione?> prenotazioni = await _repoPrenotazioni.GetPrenotazioni();
 
-            foreach (var prenotazione in prenotazioni)
+            Expression<Func<Prenotazione, bool>> filtri = x=> true;
+
+            if (!string.IsNullOrEmpty(search))
+                filtri = x => (x.Utente!.Email??"").ToLower().Contains(search.ToLower());
+
+            Expression<Func<Prenotazione,object>>? ordina = null;
+            bool desc = false;
+
+
+            if(ordinaDDI.HasValue && ordinaDDI>=0)
             {
-                if (prenotazione != null)
-                    prenotazione.UtenteViewModel = await Utenti().GetViewModel(prenotazione.IdUtente ?? "");
+                ordina = x => x.DDI;
+                desc = Convert.ToBoolean(ordinaDDI);
+            }
+            else if(ordinaDDF.HasValue && ordinaDDF >= 0)
+            {
+                ordina = x => x.DDF;
+                desc = Convert.ToBoolean(ordinaDDF);
             }
 
+            Tuple<IEnumerable<Prenotazione?>,int> prenotazioni = new(Enumerable.Empty<Prenotazione?>(),0);
+            int pageCount = await _repoPrenotazioni.PageCountAsync(pageSize, filtri);
+
+            if (ordina != null)
+                prenotazioni = new(await _repoPrenotazioni.GetListAsync(filtri, ordina, desc, page, pageSize), pageCount);
+            else
+                prenotazioni = new(await _repoPrenotazioni.GetListAsync(filtri, page, pageSize), pageCount);
+
+            foreach (var prenotazione in prenotazioni.Item1)
+            {
+                if (prenotazione != null)
+                    prenotazione.UtenteViewModel = await Utenti().GetViewModel(prenotazione.UtenteId ?? "");
+            }
             string JsonPrenotazioni = prenotazioni.ToJson();
 
             return Encryption.Encrypt(JsonPrenotazioni);
@@ -277,14 +339,17 @@ namespace Proj_Biblioteca.Service
 
         public async Task<string> GetPrenotazioni(string id)
         {
-            IEnumerable<Prenotazione?> prenotazioni = await _repoPrenotazioni.GetPrenotazioni(id);
+            Expression<Func<Prenotazione,bool>> filtro = p=>p.UtenteId == id;
+
+            IEnumerable<Prenotazione?> prenotazioni = await _repoPrenotazioni.GetListAsync(filtro,1,10);
 
             foreach (var prenotazione in prenotazioni)
             {
                 if (prenotazione != null)
-                    prenotazione.UtenteViewModel = await this.Utenti().GetViewModel(prenotazione.IdUtente ?? "");
+                    prenotazione.UtenteViewModel = await this.Utenti().GetViewModel(prenotazione.UtenteId ?? "");
+                
             }
-
+            
             string JsonPrenotazioni = prenotazioni.ToJson();
 
             return Encryption.Encrypt(JsonPrenotazioni);
@@ -294,10 +359,10 @@ namespace Proj_Biblioteca.Service
 
         public async Task<bool> RimuoviPrenotazione(int id, UtenteViewModel utente)
         {
-            Prenotazione? prenotazione = await _repoPrenotazioni.GetPrenotazione(id);
+            Prenotazione? prenotazione = await _repoPrenotazioni.GetAsync(p=> p.ID == id);
 
-            if (utente.Ruolo != "Utente" && prenotazione != null)
-                prenotazione = prenotazione.IdUtente == utente.Id ? prenotazione : null;
+            if (utente.Ruolo == "Utente" && prenotazione != null)
+                prenotazione = prenotazione.UtenteId == utente.Id ? prenotazione : null;
 
             if (prenotazione == null) return false;
 
@@ -316,19 +381,18 @@ namespace Proj_Biblioteca.Service
             return false;
         }
 
-        public async Task<CodiceStato> AggiungiPrenotazione(int? idLibro, string idUtente, string inizio, string fine)
+        public async Task<CodiceStato> AggiungiPrenotazione(AddPrenotazioneViewModel prenotazione)
         {
-            if (idLibro == null || inizio == null || fine == null)
+            if (prenotazione.IdLibro == null || prenotazione.Inizio == null || prenotazione.Fine == null)
                 return CodiceStato.Dati_Insufficienti;
 
-            Libro? libro = await _repoLibri.GetLibro(idLibro ?? 0);
-
-            IEnumerable<Prenotazione?> prenotazioniUtente = JsonConvert.DeserializeObject<IEnumerable<Prenotazione?>>(Encryption.Decrypt(await GetPrenotazioni(idUtente))) ?? Enumerable.Empty<Prenotazione>();
-
-
+            Libro? libro = await _repoLibri.GetAsync(l=>l.ID==(prenotazione.IdLibro??0));
 
             if (libro == null)
                 return CodiceStato.Errore;
+
+            var json = Encryption.Decrypt(await GetPrenotazioni(prenotazione.IdUtente??""));
+            IEnumerable<Prenotazione?> prenotazioniUtente = JsonConvert.DeserializeObject<IEnumerable<Prenotazione?>>(json) ?? Enumerable.Empty<Prenotazione>();
 
             if (prenotazioniUtente == null)
                 return CodiceStato.Errore;
@@ -336,7 +400,13 @@ namespace Proj_Biblioteca.Service
             if (prenotazioniUtente.Count() < 3 && //check se l'utente loggato ha meno di 3 prenotazioni
                 !prenotazioniUtente.Any(p => p!.LibroID == libro.ID)) //Check se l'utente loggato ha già lo stesso libro
             {
-                bool AddResult = await _repoPrenotazioni.Insert(new Prenotazione() { LibroID = libro.ID, IdUtente = idUtente, DDI = DateTime.Parse(inizio), DDF = DateTime.Parse(fine) });
+                DateTime DDI = DateTime.Parse(prenotazione.Inizio);
+                DateTime DDF = DateTime.Parse(prenotazione.Fine);
+
+                DDI = DDI.AddHours(prenotazione.ClientTime + prenotazione.TimeOffset);
+                DDF = DDF.AddHours(prenotazione.ClientTime + prenotazione.TimeOffset);
+
+                bool AddResult = await _repoPrenotazioni.Insert(new Prenotazione() { LibroID = libro.ID, UtenteId = prenotazione.IdUtente, DDI = DDI, DDF = DDF });
 
                 if (AddResult)
                 {

@@ -14,6 +14,23 @@ function FormLogin() {
     registrationForm.classList.add("hidden")
 }
 
+$('#local-tf').change(function () {
+    $('.toLocalDate').each(function () {
+        var utcDate = $(this).data('utcdate');
+
+        var dateValues = utcDate.split("/");
+
+        var localDate = new Date(dateValues[2] + '-' + dateValues[1] + '-' + dateValues[0]);
+        $(this).html(localDate.toLocaleDateString());
+    });
+});
+
+$('#utc-tf').change(function () {
+    $('.toLocalDate').each(function () {
+        var utcDate = $(this).data('utcdate');
+        $(this).html(utcDate+"UTC");
+    });
+});
 
 $('.RimuoviPrenotazione').click(function () {
     var form = $(this).parent();
@@ -26,9 +43,6 @@ $('.RimuoviPrenotazione').click(function () {
         }
     });
 });
-
-
-
 
 $('.disconnect').click(function () {
     var token = $(".jsAntiForgeryToken");

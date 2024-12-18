@@ -10,24 +10,31 @@
     <link href="~/css/Account.css" rel="stylesheet"/>
 </head>
 <body>
-    <h3>Gestione Utenti</h3>
-    <br />
-    <form method="post" onsubmit="return false">
-        <input type="text" placeholder="E-mail.." name="email" />
-        <button class="ricerca" type="submit">Cerca</button>
-    </form>
-    <hr />
-    <div class="utenti">
-        <table class="table">
-            <tr class="table-columns">
-                <th>ID</th>
-                <th>Utente</th>
-                <th>Email</th>
-                <th>Ruolo</th>
-            </tr>
+    <div class="container">
+        <div class="AccountPage">
+            <div class="topPage">
+            <h3>Gestione Utenti</h3>
+            </div>
+            <br />
+            <div class="innerPage">
 
-
-        </table>
+            <form method="post" onsubmit="return false">
+                <input type="text" placeholder="E-mail.." name="email" />
+                <button class="ricerca" type="submit">Cerca</button>
+            </form>
+            <hr />
+            <div class="utenti">
+                <table class="table">
+                    <tr class="table-columns">
+                        <th>ID</th>
+                        <th>Utente</th>
+                        <th>Email</th>
+                        <th>Ruolo</th>
+                    </tr>
+                </table>
+            </div>
+            </div>
+        </div>
     </div>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="~/js/GestioneRuoli.js"></script>

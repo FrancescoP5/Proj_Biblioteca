@@ -2,7 +2,7 @@
 using Proj_Biblioteca.ViewModels;
 
 
-namespace Proj_Biblioteca_Test
+namespace Proj_Biblioteca_Test.UnitTests
 {
     [TestClass]
     public class UnitTest_Utenti
@@ -14,7 +14,7 @@ namespace Proj_Biblioteca_Test
 
             string Email_ExpectedOutput = "Example@Example.com";
 
-            UtenteViewModel Utente = new UtenteViewModel() { DDR = new DateTime(2000, 1, 1, 1, 1, 1, 1, 1), Email = Email_Input, Id = "0", Nome = "Example", Ruolo = "Utente" };
+            UtenteViewModel Utente = new() { DDR = new DateTime(2000, 1, 1, 1, 1, 1, 1, 1), Email = Email_Input, Id = "0", Nome = "Example", Ruolo = "Utente" };
 
             string Email_Output = Utente.Email;
 
@@ -30,13 +30,13 @@ namespace Proj_Biblioteca_Test
 
             string Email_ExpectedOutput = "Example@Example.com";
 
-            Utente Utente = new Utente() { DDR = new DateTime(2000, 1, 1, 1, 1, 1, 1, 1), Email = Email_Input, Id = "0", UserName = "Example", PasswordHash = "Example" };
+            Utente Utente = new() { DDR = new DateTime(2000, 1, 1, 1, 1, 1, 1, 1), Email = Email_Input, Id = "0", UserName = "Example", PasswordHash = "Example" };
 
             string Email_Output = Utente.Email;
 
 
             Assert.AreEqual(Email_ExpectedOutput, Email_Output, "UtenteViewModel Email diverse.");
-           
+
         }
 
 

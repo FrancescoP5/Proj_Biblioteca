@@ -16,3 +16,7 @@ document.querySelectorAll(".Account").forEach(item => {
 function AggiungiLibri() {
     window.location.href = "/Libro/AggiungiLibro";
 }
+
+$('.Cerca').click(function () {
+    $('.searchbar').toggleClass("Nascosto");
+})

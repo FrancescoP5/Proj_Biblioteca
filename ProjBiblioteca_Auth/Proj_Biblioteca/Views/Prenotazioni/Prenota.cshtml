@@ -13,50 +13,54 @@
     <link href="~/css/Prenotazioni.css" rel="stylesheet"/>
 </head>
 <body>
-    <div class="prenotazione">
-        <h3>Prenota</h3>
-        @if (Model != null && Model.Disponibilita > 0)
-        {
-           <table class="table">
-               <tr class="table-columns">
-                    <th>Titolo</th>
-                    <th>Autore</th>
-                    <th>ISBN</th>
-                    <th>Disponibilità</th>
-               </tr>
-               
-               <tr class="table-values">
-                    <th>@Model.Titolo</th>
-                    <th>@Model.Autore</th>
-                    <th>@Model.ISBN</th>
-                    <th>@Model.Disponibilita</th>
-               </tr>
-               
-           </table>
-           <div class="inputs">
-            <form method="post"onsubmit="return false">
-                    <input type="text" name="idLibro" value="@Model.ID" required hidden />
-                <label>Data Prenotazione</label>
-                <br />
-                    <label>Inizio</label><input class="date" id="dataInizio" name="inizio" type="date" min="@DateTime.Now.ToString("yyyy-MM-dd")" onchange="CambioData(@Model.PrenotazioneMax)" required/>
-                <br />
-                    <label>Fine  </label><input class="date" id="dataFine" name="fine" type="date" min="" max="" required/>
-                 <br />
-                <button class="prenota" type="submit">Prenota</button>
-            </form>
-           </div>
-           <br />
-           <div class="errorMsg">
-               
-           </div>
+    <div class="container">
+        <div class="prenotazione">
+            <h3>Prenota</h3>
+            @if (Model != null && Model.Disponibilita > 0)
+            {
+               <table class="table">
+                   <tr class="table-columns">
+                        <th>Titolo</th>
+                        <th>Autore</th>
+                        <th>ISBN</th>
+                        <th>Disponibilità</th>
+                   </tr>
+                   
+                   <tr class="table-values">
+                        <th>@Model.Titolo</th>
+                        <th>@Model.Autore</th>
+                        <th>@Model.ISBN</th>
+                        <th>@Model.Disponibilita</th>
+                   </tr>
+                   
+               </table>
+               <div class="inputs">
+                <form method="post"onsubmit="return false">
+                        <input type="text" name="idLibro" value="@Model.ID" required hidden />
+                        <input type="number" id="timeOffset" name="timeOffset" value="" required hidden />
+                        <input type="number" id="clientTime" name="clientTime" value="" required hidden />
+                    <label>Data Prenotazione</label>
+                    <br />
+                        <label>Inizio</label><input class="date" id="dataInizio" name="inizio" type="date" data-utcdate="@(DateTime.UtcNow.ToString("yyyy-MM-dd"))" min="" onchange="CambioData(@Model.PrenotazioneMax)" required />
+                    <br />
+                        <label>Fine  </label><input class="date" id="dataFine" name="fine" type="date" min="" max="" required/>
+                     <br />
+                    <button class="prenota" type="submit">Prenota</button>
+                </form>
+               </div>
+               <br />
+               <div class="errorMsg">
+                   
+               </div>
 
-        }
-        else
-        {
-            <h4>Libro non disponibile..</h4>
-        }
+            }
+            else
+            {
+                <h4>Libro non disponibile..</h4>
+            }
+        </div>
+    </div>
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
         <script src="~/js/Prenotazioni.js"></script>
-    </div>
 </body>
 </html>

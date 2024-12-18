@@ -9,20 +9,17 @@ namespace Proj_Biblioteca.Models
         public int ID { get; set; }
 
         [DataType(DataType.DateTime)]
-        public DateTime DDI {  get; set; }
+        public DateTime DDI { get; set; }
         [DataType(DataType.DateTime)]
-        public DateTime DDF {  get; set; }
+        public DateTime DDF { get; set; }
 
-        [ForeignKey("Utente")]
-        public string? IdUtente { get; set; }
+        public string? UtenteId { get; set; }
         public int LibroID { get; set; }
 
-        public Utente? Utente { private get;  set; }
+        public Utente? Utente { get; set; }
         public Libro? Libro { get; set; }
 
         [NotMapped]
         public UtenteViewModel? UtenteViewModel { get; set; }
-
-
     }
 }

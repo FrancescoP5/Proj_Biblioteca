@@ -11,26 +11,35 @@
     <title>Biblioteca</title>
 </head>
 <body>
+    <div class="backgroundImage">
+        
+    </div>
     <header>
-
         <div class="NavBar">
             <h1 class="TitoloHeader">Biblioteca</h1>
-            @if (ViewData["Utente"] != null)
-            {
-                UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel() { Nome = "NULL", Email = "NULL", Ruolo = "NULL" });
-                if (UtenteLoggato.Ruolo == "Admin")
+            <div class="Buttons">
+                @if (ViewData["Utente"] != null)
                 {
-                    <i c lass="AggiungiLibro" onclick="AggiungiLibri()">+</i>
+                    UtenteViewModel UtenteLoggato = (ViewData["Utente"] as UtenteViewModel ?? new UtenteViewModel() { Nome = "NULL", Email = "NULL", Ruolo = "NULL" });
+                    if (UtenteLoggato.Ruolo == "Admin")
+                    {
+                        <i class="AggiungiLibro" onclick="AggiungiLibri()">+</i>
+                    }
                 }
-            }
-            <i class="fa fa-user Account"></i>
+                <i  class="fa fa-search Cerca"></i>
+                <form method="get" action="/Libro/Elenco/" class="searchbar Nascosto">
+                    <input type="text" name="search" id="search" placeholder="Cerca.." />
+                    <button type="submit" id="submitSearch">Cerca</button>
+                </form>
+                <i class="fa fa-user Account"></i>
+            </div>
         </div>
     </header>
 
     <div class="PageBody">
         @RenderBody()
     </div>
-
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
     <script src="~/js/Layout.js"></script>
     @RenderSection("scripts", required:false)
 </body>

@@ -1,14 +1,24 @@
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Proj_Biblioteca.DAL;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca.Models;
 using Proj_Biblioteca.Service;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorPages();
+
+builder.Services.AddRateLimiter(_ => _.AddFixedWindowLimiter(policyName:"fixed" ,options =>
+{
+    options.PermitLimit = 1;
+    options.Window = TimeSpan.FromSeconds(1);
+    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+    options.QueueLimit = 1;
+}));
 
 builder.Services.AddDbContext<LibreriaContext>(options =>
   options.UseSqlServer(builder.Configuration.GetConnectionString("LibreriaContext")));
@@ -16,13 +26,14 @@ builder.Services.AddDbContext<LibreriaContext>(options =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-builder.Services.AddIdentity<Utente,Role>().AddEntityFrameworkStores<LibreriaContext>();
+builder.Services.AddIdentity<Utente, Role>().AddEntityFrameworkStores<LibreriaContext>();
 builder.Services.Configure<IdentityOptions>(options =>
 {
     options.SignIn.RequireConfirmedAccount = true;
     options.User.RequireUniqueEmail = true;
 });
-builder.Services.Configure<SecurityStampValidatorOptions>(options => { 
+builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+{
     options.ValidationInterval = TimeSpan.FromSeconds(1);
 });
 
@@ -47,7 +58,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddHttpContextAccessor();
 
 var app = builder.Build();
- 
+
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -73,7 +84,7 @@ using (var scope = app.Services.CreateScope())
     var SignInManager = services.GetRequiredService<SignInManager<Utente>>();
     var RoleManager = services.GetRequiredService<RoleManager<Role>>();
 
-    DbInitializer.Initialize(context,UserManager);
+    DbInitializer.Initialize(context, UserManager);
 }
 
 
@@ -86,7 +97,11 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.UseRateLimiter();
+
 app.MapControllerRoute(name: "default", pattern: "{controller=Libro}/{action=Elenco}/{id?}");
 
 app.Run();
+
+public partial class Program() { }
 
