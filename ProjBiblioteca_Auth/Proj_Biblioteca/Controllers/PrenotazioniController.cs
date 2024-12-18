@@ -10,14 +10,10 @@ namespace Proj_Biblioteca.Controllers
     [EnableRateLimiting("fixed")]
     public class PrenotazioniController(ILogger<BaseController> logger, ILibreriaManager libreriaManager) : BaseController(logger, libreriaManager)
     {
+        [Authorize]
         public async Task<IActionResult> Prenota(int idLibro)
         {
-            UtenteViewModel? UtenteLoggato = await _libreriaManager.Utenti().GetLoggedUser(User);
-
-            if (UtenteLoggato != null)
-                return View(await _libreriaManager.Libri().FindLibro(idLibro));
-
-            return RedirectToAction("AccountPage", "Utenti");
+            return View(await _libreriaManager.Libri().FindLibro(idLibro));
         }
 
         // ~/Prenotazioni/ElencoPrenotazioni

@@ -126,8 +126,6 @@ namespace Proj_Biblioteca.Service
 
         public async Task<Tuple<IEnumerable<Prenotazione?>,int>> PrenotazioniUtente(UtenteViewModel? utente, int? page, string? search, int? ordinaDDI, int? ordinaDDF)
         {
-
-
             if (utente == null)
                 return new(Enumerable.Empty<Prenotazione>(),0);
 

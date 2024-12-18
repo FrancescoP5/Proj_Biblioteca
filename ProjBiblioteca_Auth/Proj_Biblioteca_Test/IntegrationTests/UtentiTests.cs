@@ -1,26 +1,28 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
+﻿using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using Proj_Biblioteca.Data;
 using Proj_Biblioteca_Test.IntegrationTests.Helpers;
 using System.Net;
+using System.Net.Http.Headers;
 using Xunit;
 
 namespace Proj_Biblioteca_Test.IntegrationTests
 {
-    public class UtentiTests : IClassFixture<CustomWebApplicationFactory<Program>>
+    public class UtentiTests : IClassFixture<CustomWebApplicationFactory<Program>>, IClassFixture<WebApplicationFactory<Program>>
     {
-        private readonly CustomWebApplicationFactory<Program> _applicationFactory;
+        private readonly WebApplicationFactory<Program> _applicationFactory;
+        private readonly CustomWebApplicationFactory<Program> _applicationFactoryAuthenticated;
+
         private readonly HttpClient _client;
+        private readonly HttpClient _authClient;
 
-        private LibreriaContext context;
+        public LibreriaContext context;
 
-        public UtentiTests(CustomWebApplicationFactory<Program> applicationFactory)
+        public UtentiTests(WebApplicationFactory<Program> applicationFactory, CustomWebApplicationFactory<Program> applicationFactoryAuthenticated)
         {
             _applicationFactory = applicationFactory;
+            _applicationFactoryAuthenticated = applicationFactoryAuthenticated;
 
             var config = new ConfigurationBuilder().AddJsonFile("appsettings.json").Build();
 
@@ -31,19 +33,19 @@ namespace Proj_Biblioteca_Test.IntegrationTests
             context = new LibreriaContext(options);
 
             _client = _applicationFactory.CreateClient();
+
+            _authClient = _applicationFactoryAuthenticated.CreateClient();
+            _authClient.BaseAddress = new Uri("https://localhost/");
+            _authClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Test");
         }
 
-        public static HttpClient GetAuthClient()
+        public static HttpClient GetAuthClient(CustomWebApplicationFactory<Program> factory)
         {
-            return new CustomWebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureTestServices(services =>
-                {
-                    services.AddAuthentication(defaultScheme: "TestScheme")
-                        .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(
-                            "TestScheme", options => { });
-                });
-            }).CreateClient();
+            var client = factory.CreateClient();
+
+            client.BaseAddress = new Uri("https://localhost/");
+            client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("TestScheme");
+            return client;
         }
 
         [Fact]
@@ -73,20 +75,28 @@ namespace Proj_Biblioteca_Test.IntegrationTests
 
         [Theory]
         [InlineData("/Utenti/GestioneRuoli")]
-        public async Task Unauthenticated_ProtectedViews_ReturnTesting(string url)
+        public async Task Unauthenticated_ProtectedViews_GetsRedirected(string url)
         {
-            var response = await _client.GetAsync(url);
+            var client = _applicationFactory.CreateClient(new WebApplicationFactoryClientOptions()
+            {
+                AllowAutoRedirect = false
+            });
+            var response = await client.GetAsync(url);
 
-            Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(response.StatusCode, HttpStatusCode.NotFound);
-        }        
-        //[Theory]
-        //[InlineData("/Utenti/GestioneRuoli")]
-        //public async Task Authenticated_ProtectedViews_ReturnTesting(string url)
-        //{
-        //    var client = GetAuthClient();
-        //    var response = await GetAuthClient().GetAsync(url);
+            Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(HttpStatusCode.Redirect, response.StatusCode);
 
-        //    response.EnsureSuccessStatusCode();
-        //}
+            Microsoft.VisualStudio.TestTools.UnitTesting.Assert.IsNotNull(response.Headers.Location);
+            Xunit.Assert.StartsWith("http://localhost/Utenti/AccountPage", response.Headers.Location.OriginalString);
+        }
+
+        [Theory]
+        [InlineData("/Utenti/GestioneRuoli")]
+        public async Task Authenticated_ProtectedViews_ReturnsSuccessfully(string url)
+        {
+            _authClient.DefaultRequestHeaders.Add(TestAuthHandler.UserId, "eb9512d8-dea5-467b-9256-f17a03532392");
+            var response = await _authClient.GetAsync(url);
+
+            response.EnsureSuccessStatusCode();
+        }
     }
 }
