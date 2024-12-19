@@ -29,12 +29,14 @@ namespace Proj_Biblioteca.DAL
         Task<int> Save();
     }
 
-    public class RepoUtenti(LibreriaContext libreriaContext, SignInManager<Utente> signInManager, UserManager<Utente> userManager) : IRepoUtenti, IDisposable
+    public class RepoUtenti(LibreriaContext libreriaContext, SignInManager<Utente> signInManager, UserManager<Utente> userManager, ILogger<RepoUtenti> logger) : IRepoUtenti, IDisposable
     {
 
         private readonly LibreriaContext libreriaContext = libreriaContext;
         private readonly SignInManager<Utente> signInManager = signInManager;
         private readonly UserManager<Utente> userManager = userManager;
+
+        private readonly ILogger<RepoUtenti> logger = logger;
 
         public async Task<IEnumerable<Utente?>> GetUtenti()
         {
@@ -42,11 +44,19 @@ namespace Proj_Biblioteca.DAL
             {
                 return await libreriaContext.Users.AsNoTracking().ToListAsync();
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return Enumerable.Empty<Utente?>();
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento degli utenti: {ex.Message}");
             }
+            return Enumerable.Empty<Utente>();
         }
 
         public async Task<Utente?> GetUtente(string id)
@@ -55,11 +65,19 @@ namespace Proj_Biblioteca.DAL
             {
                 return await libreriaContext.Users.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return null;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento degli utenti: {ex.Message}");
             }
+            return null;
         }
 
         public async Task<IdentityUserRole<string>?> GetUserRole(string id)
@@ -68,11 +86,19 @@ namespace Proj_Biblioteca.DAL
             {
                 return await libreriaContext.UserRoles.AsNoTracking().FirstOrDefaultAsync(l => l.UserId == id);
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return null;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento degli utenti: {ex.Message}");
             }
+            return null;
         }
 
         public async Task<Role?> GetRuolo(string id)
@@ -81,11 +107,78 @@ namespace Proj_Biblioteca.DAL
             {
                 return await libreriaContext.Roles.AsNoTracking().FirstOrDefaultAsync(l => l.Id == id);
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return null;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento degli utenti: {ex.Message}");
             }
+            return null;
+        }
+
+        public async Task<Utente?> GetByCredentials(string email, string passwordHash)
+        {
+            try
+            {
+                Utente? utente = await libreriaContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email);
+                if (utente == null) return null;
+
+                var verificaPassword = Encryption.VerifyPassword(passwordHash, utente);
+
+                if(verificaPassword == "Verificato") return utente;
+            }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento degli utenti: {ex.Message}");
+            }
+            return null;
+        }
+
+        public async Task<bool> InsertByCredentials(string nome, string email, string password)
+        {
+            Utente utente = new() { Id = Guid.NewGuid().ToString(), UserName = nome, Email = email, PasswordHash = password, DDR = DateTime.UtcNow };
+            utente.PasswordHash = Encryption.HashPassword(password, utente);
+            try
+            {
+                IdentityResult registerResult = await userManager.CreateAsync(utente);
+
+                if (registerResult.Succeeded)
+                {
+                    await userManager.AddToRoleAsync(utente, "Utente");
+                    return true;
+                }
+            }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di inserimento cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nel inserimento del utente: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio del inserimento del ruolo: {upd_ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nel inserimento del ruolo: {ex.Message}");
+            }
+            return false;
         }
 
         public async Task<bool> CambiaRuolo(string id, string ruolo)
@@ -106,47 +199,25 @@ namespace Proj_Biblioteca.DAL
 
                     return true;
                 }
+                catch (OperationCanceledException opcanc_ex)
+                {
+                    logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di cambiamento ruolo cancellata: {opcanc_ex.Message}");
+                }
+                catch (DbUpdateConcurrencyException updcc_ex)
+                {
+                    logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nel cambiamento del utente: {updcc_ex.Message}");
+                }
+                catch (DbUpdateException upd_ex)
+                {
+                    logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio del cambiamento del ruolo: {upd_ex.Message}");
+                }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
+                    logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nel cambiamento del ruolo: {ex.Message}");
                 }
                 return false;
             }
             return true;
-        }
-
-        public async Task<Utente?> GetByCredentials(string email, string passwordHash)
-        {
-            try
-            {
-                Utente? utente = await libreriaContext.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Email == email);
-                if (utente == null) return null;
-
-                var verificaPassword = Encryption.VerifyPassword(passwordHash, utente);
-
-                if(verificaPassword == "Verificato") return utente;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-            return null;
-        }
-
-        public async Task<bool> InsertByCredentials(string nome, string email, string password)
-        {
-            Utente utente = new() { Id = Guid.NewGuid().ToString(), UserName = nome, Email = email, PasswordHash = password, DDR = DateTime.UtcNow };
-            utente.PasswordHash = Encryption.HashPassword(password, utente);
-
-            IdentityResult registerResult = await userManager.CreateAsync(utente);
-
-            if (registerResult.Succeeded)
-            {
-                await userManager.AddToRoleAsync(utente, "Utente");
-                return true;
-            }
-
-            return false;
         }
 
         public async Task<bool> Delete(Utente? utente)
@@ -187,12 +258,23 @@ namespace Proj_Biblioteca.DAL
 
                 return false;
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di eliminazione cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nell' eliminazione del utente: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio dell' eliminazione del ruolo: {upd_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return false;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nell' eliminazione del ruolo: {ex.Message}");
             }
-
+            return false;
         }
 
         public async Task<bool> Insert(Utente utente)
@@ -209,12 +291,23 @@ namespace Proj_Biblioteca.DAL
 
                 return false;
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di inserimento cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nel inserimento dell' utente: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio del inserimento del ruolo: {upd_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return false;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nel inserimento del ruolo: {ex.Message}");
             }
-
+            return false;
         }
 
         public async Task<bool> Update(Utente utente)
@@ -231,12 +324,23 @@ namespace Proj_Biblioteca.DAL
 
                 return false;
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di update cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nell' update: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio dell' update del utente: {upd_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return false;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nell' update del ruolo: {ex.Message}");
             }
-
+            return false;
         }
 
         public async Task<bool> Login(Utente utente)
@@ -246,11 +350,23 @@ namespace Proj_Biblioteca.DAL
                 await signInManager.SignInAsync(utente, false);
                 return true;
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di login cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nel login: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio del login del utente: {upd_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                return false;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nel login del ruolo: {ex.Message}");
             }
+            return false;
         }
 
         public async Task<bool> Logout()
@@ -260,11 +376,23 @@ namespace Proj_Biblioteca.DAL
                 await signInManager.SignOutAsync();
                 return true;
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di logout cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nel logout: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio del logout del utente: {upd_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex);
-                return false;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nel logout del ruolo: {ex.Message}");
             }
+            return false;
         }
 
         public async Task<int> Save()
@@ -273,10 +401,21 @@ namespace Proj_Biblioteca.DAL
             {
                 return await libreriaContext.SaveChangesAsync();
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                throw new OperationCanceledException(opcanc_ex.Message);
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                throw new DbUpdateConcurrencyException(updcc_ex.Message);
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                throw new DbUpdateException(upd_ex.Message);
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return 0;
+                throw new Exception(ex.Message);
             }
 
         }
@@ -299,8 +438,19 @@ namespace Proj_Biblioteca.DAL
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            try
+            {
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+            catch (ArgumentNullException argnull_ex)
+            {
+                throw new ArgumentNullException(argnull_ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 

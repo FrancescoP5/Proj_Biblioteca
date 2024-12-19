@@ -19,9 +19,11 @@ namespace Proj_Biblioteca.DAL
         Task<int> Save();
     }
 
-    public class RepoLibri(LibreriaContext libreriaContext) : IRepoLibri, IDisposable
+    public class RepoLibri(LibreriaContext libreriaContext, ILogger<RepoLibri> logger) : IRepoLibri, IDisposable
     {
         private readonly LibreriaContext libreriaContext = libreriaContext;
+
+        private readonly ILogger<RepoLibri> logger = logger;
 
         public async Task<IEnumerable<Libro?>> GetListAsync(Expression<Func<Libro, bool>>? filters = null, int? page = null, int? pageSize = null)
         {
@@ -42,9 +44,20 @@ namespace Proj_Biblioteca.DAL
 
                 return await query.ToListAsync();
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+                return Enumerable.Empty<Libro>();
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+                return Enumerable.Empty<Libro>();
+
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Errore durante il caricamento dei libri: {ex.Message}");
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento dei libri: {ex.Message}");
                 return Enumerable.Empty<Libro>();
             }
         }
@@ -55,9 +68,20 @@ namespace Proj_Biblioteca.DAL
             {
                 return await libreriaContext.Libri.AsNoTracking().FirstOrDefaultAsync(filters);
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+                return null;
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+                return null;
+
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Errore durante il caricamento del libro: {ex.Message}");
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento dei libri: {ex.Message}");
                 return null;
             }
         }
@@ -72,11 +96,16 @@ namespace Proj_Biblioteca.DAL
                 
                 return (int) Math.Ceiling((double)totalCount / pageSize); 
             }
-            catch(Exception ex)
-            {
-                Console.WriteLine($"Errore durante il caricamento dei libri: {ex.Message}");
-                return 0;
+            catch (OperationCanceledException canc_ex){
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
             }
+            catch (ArgumentNullException arg_ex){
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+            }
+            catch (Exception ex){
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento dei libri: {ex.Message}");
+            }
+                return 0;
         }
 
         public async Task<bool> Delete(Libro libro)
@@ -93,12 +122,23 @@ namespace Proj_Biblioteca.DAL
 
                 return false;
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di rimozione cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nella rimozione del libro: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio della cancellazione del libro: {upd_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return false;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nella cancellazione del libro: {ex.Message}");
             }
-
+            return false;
         }
 
         public async Task<bool> Insert(Libro libro)
@@ -115,11 +155,23 @@ namespace Proj_Biblioteca.DAL
 
                 return false;
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di aggiunta cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nella aggiunta del libro: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio della aggiunta del libro: {upd_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return false;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nella aggiunta del libro: {ex.Message}");
             }
+            return false;
 
         }
 
@@ -137,11 +189,23 @@ namespace Proj_Biblioteca.DAL
 
                 return false;
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di update cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nell' update del libro: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio dell' update del libro: {upd_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return false;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nell' update del libro: {ex.Message}");
             }
+            return false;
 
         }
 
@@ -151,19 +215,25 @@ namespace Proj_Biblioteca.DAL
             {
                 return await libreriaContext.SaveChangesAsync();
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-                return 0;
+            catch (OperationCanceledException opcanc_ex) {
+                throw new OperationCanceledException(opcanc_ex.Message);
             }
-
+            catch (DbUpdateConcurrencyException updcc_ex){
+                throw new DbUpdateConcurrencyException(updcc_ex.Message);
+            }
+            catch (DbUpdateException upd_ex){
+                throw new DbUpdateException(upd_ex.Message);
+            }
+            catch (Exception ex){
+                throw new Exception(ex.Message);
+            }
         }
 
         private bool disposed = false;
         protected virtual void Dispose(bool disposing)
         {
             var success = false;
-            if (!this.disposed)
+            if (!disposed)
             {
                 if (disposing)
                 {
@@ -172,13 +242,24 @@ namespace Proj_Biblioteca.DAL
                 }
             }
             if(success)
-            this.disposed = true;
+            disposed = true;
         }
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            try
+            {
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+            catch (ArgumentNullException argnull_ex)
+            {
+                throw new ArgumentNullException(argnull_ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 }

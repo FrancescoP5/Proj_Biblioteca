@@ -23,10 +23,12 @@ namespace Proj_Biblioteca.DAL
         Task<int> Save();
     }
 
-    public class RepoPrenotazioni(LibreriaContext libreriaContext) : IRepoPrenotazioni, IDisposable
+    public class RepoPrenotazioni(LibreriaContext libreriaContext, ILogger<RepoPrenotazioni> logger) : IRepoPrenotazioni, IDisposable
     {
         private static readonly object _semaforo = new(); 
         private readonly LibreriaContext libreriaContext = libreriaContext;
+
+        private readonly ILogger<RepoPrenotazioni> logger = logger;
 
         public async Task<IEnumerable<Prenotazione?>> GetListAsync(int page, int pageSize)
         {
@@ -42,11 +44,20 @@ namespace Proj_Biblioteca.DAL
 
                 return await query.Include(p => p.Libro).ToListAsync();
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Errore durante il caricamento delle prenotazioni: {ex.Message}");
-                return Enumerable.Empty<Prenotazione>();
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento delle prenotazioni: {ex.Message}");
             }
+            return Enumerable.Empty<Prenotazione>();
         }
 
         public async Task<IEnumerable<Prenotazione?>> GetListAsync(Expression<Func<Prenotazione, bool>> filters, int page, int pageSize)
@@ -81,11 +92,20 @@ namespace Proj_Biblioteca.DAL
                     },
                 }).ToListAsync();
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Errore durante il caricamento delle prenotazioni: {ex.Message}");
-                return Enumerable.Empty<Prenotazione>();
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento delle prenotazioni: {ex.Message}");
             }
+            return Enumerable.Empty<Prenotazione>();
         }
 
         public async Task<IEnumerable<Prenotazione?>> GetListAsync(Expression<Func<Prenotazione, bool>> filters, Expression<Func<Prenotazione, object>> ordina, bool ordina_desc, int page, int pageSize)
@@ -122,11 +142,20 @@ namespace Proj_Biblioteca.DAL
                     },
                 }).ToListAsync(); 
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Errore durante il caricamento delle prenotazioni: {ex.Message}");
-                return Enumerable.Empty<Prenotazione>();
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento delle prenotazioni: {ex.Message}");
             }
+            return Enumerable.Empty<Prenotazione>();
         }
 
         public async Task<Prenotazione?> GetAsync(Expression<Func<Prenotazione, bool>> filters)
@@ -135,11 +164,20 @@ namespace Proj_Biblioteca.DAL
             {
                 return await libreriaContext.Prenotazioni.Include(p=>p.Libro).AsNoTracking().FirstOrDefaultAsync(filters);
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Errore durante il caricamento delle prenotazioni: {ex.Message}");
-                return null;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento delle prenotazioni: {ex.Message}");
             }
+            return null;
         }
 
         public async Task<int> PageCountAsync(int pageSize, Expression<Func<Prenotazione, bool>>? filters = null)
@@ -152,11 +190,19 @@ namespace Proj_Biblioteca.DAL
 
                 return (int)Math.Ceiling((double)totalCount / pageSize);
             }
+            catch (OperationCanceledException canc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] l'operazione è stata annullata: {canc_ex.Message}");
+            }
+            catch (ArgumentNullException arg_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [ARGUMENT NULL EXCEPTION] Un parametro che non deve essere null è stato passato come null: {arg_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($"Errore durante il caricamento delle prenotazioni: {ex.Message}");
-                return 0;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore durante il caricamento delle prenotazioni: {ex.Message}");
             }
+            return 0;
         }
 
         public async Task<bool> Delete(Prenotazione prenotazione)
@@ -173,11 +219,23 @@ namespace Proj_Biblioteca.DAL
 
                 return false;
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di rimozione cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nella rimozione della prenotazione: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio della rimozione della prenotazione: {upd_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return false;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nella rimozione della prenotazione: {ex.Message}");
             }
+            return false;
 
         }
 
@@ -213,11 +271,23 @@ namespace Proj_Biblioteca.DAL
 
                 return false;
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di aggiunta cancellata: {opcanc_ex.Message}");
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nell' aggiunta della prenotazione: {updcc_ex.Message}");
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio dell' aggiunta della prenotazione: {upd_ex.Message}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return false;
+                logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nell' aggiunta della prenotazione: {ex.Message}");
             }
+            return false;
         }
 
         public async Task<bool> Update(Prenotazione prenotazione)
@@ -241,9 +311,21 @@ namespace Proj_Biblioteca.DAL
                     if (await Save() > 0)
                         return true;
                 }
+                catch (OperationCanceledException opcanc_ex)
+                {
+                    logger.LogError($"[{DateTime.UtcNow:G}] [OPER. CANCELLED EXCEPTION] Operazione di update cancellata: {opcanc_ex.Message}");
+                }
+                catch (DbUpdateConcurrencyException updcc_ex)
+                {
+                    logger.LogError($"[{DateTime.UtcNow:G}] [UPD. CONCURRENCY EXCEPTION] Errore di concorrenza nell' update della prenotazione: {updcc_ex.Message}");
+                }
+                catch (DbUpdateException upd_ex)
+                {
+                    logger.LogError($"[{DateTime.UtcNow:G}] [UPDATE EXCEPTION] Errore nel salvataggio dell' update della prenotazione: {upd_ex.Message}");
+                }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
+                    logger.LogError($"[{DateTime.UtcNow:G}] [{ex.GetType().Name}] Errore nell' update della prenotazione: {ex.Message}");
                 }
             }
             return false;
@@ -256,10 +338,21 @@ namespace Proj_Biblioteca.DAL
             {
                 return await libreriaContext.SaveChangesAsync();
             }
+            catch (OperationCanceledException opcanc_ex)
+            {
+                throw new OperationCanceledException(opcanc_ex.Message);
+            }
+            catch (DbUpdateConcurrencyException updcc_ex)
+            {
+                throw new DbUpdateConcurrencyException(updcc_ex.Message);
+            }
+            catch (DbUpdateException upd_ex)
+            {
+                throw new DbUpdateException(upd_ex.Message);
+            }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
-                return 0;
+                throw new Exception(ex.Message);
             }
 
         }
@@ -282,8 +375,19 @@ namespace Proj_Biblioteca.DAL
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            try
+            {
+                Dispose(true);
+                GC.SuppressFinalize(this);
+            }
+            catch (ArgumentNullException argnull_ex)
+            {
+                throw new ArgumentNullException(argnull_ex.Message);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 }

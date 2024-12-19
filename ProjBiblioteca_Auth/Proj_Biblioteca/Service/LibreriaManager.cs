@@ -234,7 +234,7 @@ namespace Proj_Biblioteca.Service
 
             if (!string.IsNullOrEmpty(search))
             {
-                filter = l => (l.Titolo ?? "").ToLower().Contains(search.ToLower());
+                filter = l => (l.Titolo ?? "").ToLower().Contains(search.ToLower(),StringComparison.InvariantCultureIgnoreCase);
 
                 libri = await _repoLibri.GetListAsync(filter, page, pageSize);
             }
